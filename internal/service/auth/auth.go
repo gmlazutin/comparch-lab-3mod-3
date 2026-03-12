@@ -71,7 +71,7 @@ func (s *Service) checkPassword(usrpass storage.UserPassword, password string) e
 	}
 }
 
-func (s *Service) CreateUserSimple(ctx context.Context, login, password string, ts time.Time) (*User, string, error) {
+func (s *Service) CreateUserSimple(ctx context.Context, login, password string, ts time.Time) (*session.Session, string, error) {
 	usrpass, err := s.genPasswordHashBcrypt(password)
 	if err != nil {
 		return nil, "", s.wrapErr(fmt.Errorf("failed to hash password for new user %q: %w", login, err))
@@ -89,22 +89,19 @@ func (s *Service) CreateUserSimple(ctx context.Context, login, password string, 
 
 		return nil, "", s.wrapErr(fmt.Errorf("failed to create user with login %q: %w", login, err))
 	}
-	user := &User{}
-	user.fromStorage(*usr)
 	sess := &session.Session{
 		UserID:  usr.ID,
 		Expires: ts.Add(s.opts.SessionExpireTimeout),
 	}
-	user.SessionData = sess
 	tkn, err := s.opts.SessionValidatorGenerator.Generate(ctx, *sess)
 	if err != nil {
 		return nil, "", s.wrapErr(fmt.Errorf("failed to create new session for created user %d: %w", usr.ID, err))
 	}
 
-	return user, tkn, nil
+	return sess, tkn, nil
 }
 
-func (s *Service) AuthUserByPassword(ctx context.Context, login, password string, ts time.Time) (*User, string, error) {
+func (s *Service) AuthUserByPassword(ctx context.Context, login, password string, ts time.Time) (*session.Session, string, error) {
 	user, err := s.opts.Storage.GetUser(ctx, storage.GetUserData{
 		Login:           login,
 		WithCredentials: true,
@@ -120,20 +117,16 @@ func (s *Service) AuthUserByPassword(ctx context.Context, login, password string
 	if s.checkPassword(user.Password, password) != nil {
 		return nil, "", s.wrapErr(fmt.Errorf("failed to authenticate user %d: %w", user.ID, service.ErrIncorrectPassword))
 	}
-
-	usr := &User{}
-	usr.fromStorage(*user)
 	sess := &session.Session{
 		UserID:  user.ID,
 		Expires: ts.Add(s.opts.SessionExpireTimeout),
 	}
-	usr.SessionData = sess
 	tkn, err := s.opts.SessionValidatorGenerator.Generate(ctx, *sess)
 	if err != nil {
 		return nil, "", s.wrapErr(fmt.Errorf("failed to create new session for authenticated user %d: %w", user.ID, err))
 	}
 
-	return usr, tkn, nil
+	return sess, tkn, nil
 }
 
 func (s *Service) CheckUserSession(ctx context.Context, session string, ts time.Time) (*session.Session, error) {
