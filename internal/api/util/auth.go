@@ -1,12 +1,12 @@
 package util
 
 import (
+	"context"
+	"strings"
+
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth/session"
-	"context"
-	"strings"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 )
@@ -27,7 +27,7 @@ func ValidateAuthTkn(ctx context.Context, header string, ai *openapi3filter.Auth
 
 	token := parts[1]
 
-	sess, err := authservice.CheckUserSession(ctx, token, time.Now())
+	sess, err := authservice.CheckUserSession(ctx, token)
 	if err != nil {
 		return nil, service.ErrInvalidToken
 	}

@@ -205,7 +205,7 @@ func (si *serverMethods) AuthUser(c *gin.Context) {
 		return
 	}
 
-	sess, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password, time.Now())
+	sess, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrIncorrectPassword) {
 			respondError(c, http.StatusUnauthorized, "AUTH", err.Error())
@@ -227,7 +227,7 @@ func (si *serverMethods) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	sess, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password, time.Now())
+	sess, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrUserAlreadyExists) {
 			respondError(c, http.StatusConflict, "AUTH_REGISTER", err.Error())

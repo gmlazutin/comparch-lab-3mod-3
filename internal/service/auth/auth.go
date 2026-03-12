@@ -34,6 +34,8 @@ type Service struct {
 	opts Options
 }
 
+var timeNow = time.Now
+
 func New(options Options) *Service {
 	if options.SessionExpireTimeout == 0 {
 		options.SessionExpireTimeout = time.Hour
@@ -71,7 +73,7 @@ func (s *Service) checkPassword(usrpass storage.UserPassword, password string) e
 	}
 }
 
-func (s *Service) CreateUserSimple(ctx context.Context, login, password string, ts time.Time) (*session.Session, string, error) {
+func (s *Service) CreateUserSimple(ctx context.Context, login, password string) (*session.Session, string, error) {
 	usrpass, err := s.genPasswordHashBcrypt(password)
 	if err != nil {
 		return nil, "", s.wrapErr(fmt.Errorf("failed to hash password for new user %q: %w", login, err))
@@ -91,7 +93,7 @@ func (s *Service) CreateUserSimple(ctx context.Context, login, password string, 
 	}
 	sess := &session.Session{
 		UserID:  usr.ID,
-		Expires: ts.Add(s.opts.SessionExpireTimeout),
+		Expires: timeNow().Add(s.opts.SessionExpireTimeout),
 	}
 	tkn, err := s.opts.SessionValidatorGenerator.Generate(ctx, *sess)
 	if err != nil {
@@ -101,7 +103,7 @@ func (s *Service) CreateUserSimple(ctx context.Context, login, password string, 
 	return sess, tkn, nil
 }
 
-func (s *Service) AuthUserByPassword(ctx context.Context, login, password string, ts time.Time) (*session.Session, string, error) {
+func (s *Service) AuthUserByPassword(ctx context.Context, login, password string) (*session.Session, string, error) {
 	user, err := s.opts.Storage.GetUser(ctx, storage.GetUserData{
 		Login:           login,
 		WithCredentials: true,
@@ -119,7 +121,7 @@ func (s *Service) AuthUserByPassword(ctx context.Context, login, password string
 	}
 	sess := &session.Session{
 		UserID:  user.ID,
-		Expires: ts.Add(s.opts.SessionExpireTimeout),
+		Expires: timeNow().Add(s.opts.SessionExpireTimeout),
 	}
 	tkn, err := s.opts.SessionValidatorGenerator.Generate(ctx, *sess)
 	if err != nil {
@@ -129,8 +131,8 @@ func (s *Service) AuthUserByPassword(ctx context.Context, login, password string
 	return sess, tkn, nil
 }
 
-func (s *Service) CheckUserSession(ctx context.Context, session string, ts time.Time) (*session.Session, error) {
-	sess, err := s.opts.SessionValidatorGenerator.Validate(ctx, session, ts)
+func (s *Service) CheckUserSession(ctx context.Context, session string) (*session.Session, error) {
+	sess, err := s.opts.SessionValidatorGenerator.Validate(ctx, session, timeNow())
 	if err != nil {
 		return nil, s.wrapErr(fmt.Errorf("failed to validate session: %w", err))
 	}

@@ -10,4 +10,8 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 
 	ErrContactNotFound = errors.New("contact not found")
+
+	ErrIncorrectSelectorValues = errors.New("incorrect selector")
+	ErrIncorrectPhone = errors.New("incorrect phone number")
+	ErrIncorrectBirthday = errors.New("incorrect birthday date")
 )
