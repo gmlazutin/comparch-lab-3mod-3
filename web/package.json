@@ -15,6 +15,7 @@
     "isbot": "^5.1.31",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-modal": "^3.16.3",
     "react-router": "7.12.0"
   },
   "devDependencies": {
@@ -23,6 +24,7 @@
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@types/react-modal": "^3.16.3",
     "openapi-typescript-codegen": "^0.30.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",

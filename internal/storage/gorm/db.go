@@ -49,20 +49,21 @@ func New(opts Options) (*DB, error) {
 
 	opts.Opts.Logger = opts.Opts.Logger.With(logging.Service("gormStorageProvider"))
 
+	//todo: write custom slog logger for GORM. This is workaround
+	//due to default behavior of GORM slogLogger
+	var log logger.Interface
+	if opts.Opts.Logger.Enabled(nil, slog.LevelDebug) {
+		log = logger.NewSlogLogger(opts.Opts.Logger, logger.Config{
+			LogLevel: logger.Info,
+		})
+	}
+
 	db, err := gorm.Open(dialector, &gorm.Config{
 		TranslateError: true,
-		Logger: logger.NewSlogLogger(opts.Opts.Logger, logger.Config{
-			LogLevel: logger.Info,
-		}),
+		Logger:         log,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("gormStorageProvider: failed to establish db conn: %w", err)
-	}
-
-	//todo: write custom slog logger for GORM. This is workaround
-	//due to default behavior of GORM slogLogger
-	if opts.Opts.Logger.Enabled(nil, slog.LevelDebug) {
-		db = db.Debug()
 	}
 
 	return &DB{
