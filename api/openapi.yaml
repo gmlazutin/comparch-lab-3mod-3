@@ -67,7 +67,6 @@ components:
       required:
         - id
         - phone
-        - isPrimary
 
     ContactObject:
       type: object
@@ -100,7 +99,6 @@ components:
           type: boolean
       required:
         - phone
-        - isPrimary
 
     AuthRequest:
       type: object
