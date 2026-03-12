@@ -36,4 +36,7 @@ var (
 	ErrIncorrectSelectorValues = CustomValidationError{"incorrect selector"}
 	ErrIncorrectPhone          = CustomValidationError{"incorrect phone number"}
 	ErrIncorrectBirthday       = CustomValidationError{"incorrect birthday date"}
+	ErrMoreThanOnePrimaryPhone = CustomValidationError{"more than one primary phone"}
+	ErrMaxPhonesCountExceeded  = CustomValidationError{"maximum phone numbers count exceeded"}
+	ErrMinimumOnePrimaryRequired = CustomValidationError{"minimum one primary number is needed"}
 )

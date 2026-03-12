@@ -18,7 +18,7 @@ type Selector struct {
 	Offset uint
 }
 
-func (s Selector) Validate() error {
+func (s Selector) validate() error {
 	if s.Limit == 0 {
 		return service.ErrIncorrectSelectorValues
 	}
@@ -31,7 +31,7 @@ type ContactInfo struct {
 	Note     string
 }
 
-func (ci ContactInfo) Validate(ts time.Time) error {
+func (ci ContactInfo) validate(ts time.Time) error {
 	if ci.Birthday.After(ts) {
 		return service.ErrIncorrectBirthday
 	}
@@ -67,7 +67,7 @@ type PhoneInfo struct {
 	Primary bool
 }
 
-func (pi PhoneInfo) Validate() error {
+func (pi PhoneInfo) validate() error {
 	p, err := phonenumbers.Parse(pi.Phone, "")
 	if err != nil {
 		return service.ErrIncorrectPhone
@@ -77,7 +77,34 @@ func (pi PhoneInfo) Validate() error {
 	}
 
 	return nil
+}
 
+type PhoneInfos []PhoneInfo
+
+func (pi PhoneInfos) validate() error {
+	primary := 0
+	if len(pi) == 0 {
+		return service.ErrMinimumOnePrimaryRequired
+	}
+	if len(pi) > 10 {
+		return service.ErrMaxPhonesCountExceeded
+	}
+	for _, v := range pi {
+		if err := v.validate(); err != nil {
+			return err
+		}
+		if v.Primary {
+			primary++
+			if primary > 1 {
+				return service.ErrMoreThanOnePrimaryPhone
+			}
+		}
+	}
+	if primary == 0 {
+		return service.ErrMinimumOnePrimaryRequired
+	}
+
+	return nil
 }
 
 type PhoneID struct {
@@ -126,15 +153,15 @@ func (s *Service) wrapErr(err error) error {
 	return fmt.Errorf("contactbookService: %w", err)
 }
 
-func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo, phones []PhoneInfo) (*Contact, []Phone, error) {
-	if err := contact.Validate(timeNow()); err != nil {
+func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo, phones PhoneInfos) (*Contact, []Phone, error) {
+	if err := phones.validate(); err != nil {
+		return nil, nil, s.wrapErr(fmt.Errorf("unable to validate phones: %w", err))
+	}
+	if err := contact.validate(timeNow()); err != nil {
 		return nil, nil, s.wrapErr(fmt.Errorf("unable to validate contact: %w", err))
 	}
 	repophones := make([]storage.Phone, len(phones))
 	for i := range phones {
-		if err := phones[i].Validate(); err != nil {
-			return nil, nil, s.wrapErr(fmt.Errorf("unable to validate phone: %w", err))
-		}
 		repophones[i] = storage.Phone{
 			Phone:   phones[i].Phone,
 			Primary: phones[i].Primary,
@@ -199,7 +226,7 @@ func (s *Service) GetContact(ctx context.Context, id ContactID, preload *PhonesP
 }
 
 func (s *Service) GetContacts(ctx context.Context, uid uint, selector Selector) ([]ContactWithPhones, error) {
-	if err := selector.Validate(); err != nil {
+	if err := selector.validate(); err != nil {
 		return nil, s.wrapErr(fmt.Errorf("unable to validate selector: %w", err))
 	}
 	conts, err := s.opts.ContactStorage.GetContacts(ctx, storage.GetContactsData{
