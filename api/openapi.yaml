@@ -171,6 +171,7 @@ components:
       required:
         - name
         - birthday
+        - initialPhones
 
     AddContactResponse:
       type: object
