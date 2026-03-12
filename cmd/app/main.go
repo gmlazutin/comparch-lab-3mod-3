@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -75,6 +76,26 @@ func main() {
 		return
 	}
 
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			err := gormdb.PerformFlush(ctx, gorm.DB_FLUSH_DEFAULT_UNIT)
+			if err != nil {
+				return
+			}
+			select {
+			case <-time.After(time.Minute * 10):
+				continue
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	sopts := service.ServiceOptions{
 		Logger: logger,
 	}
@@ -121,7 +142,6 @@ func main() {
 		if err := srv.Stop(shutdownCtx); err != nil {
 			logger.Error("unable to shutdown server gracefully", logging.Error(err))
 		}
-
 	case err := <-errCh:
 		logger.Error("failed to start server", logging.Error(err))
 	}

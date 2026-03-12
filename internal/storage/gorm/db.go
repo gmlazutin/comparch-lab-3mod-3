@@ -26,6 +26,10 @@ type DB struct {
 	opts Options
 }
 
+const (
+	DB_FLUSH_DEFAULT_UNIT = 2000 //rows
+)
+
 type Options struct {
 	Driver string
 	Dsn    string
@@ -70,6 +74,41 @@ func New(opts Options) (*DB, error) {
 		db:   db,
 		opts: opts,
 	}, nil
+}
+
+func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
+	for _, v := range []any{&model.User{}, &model.Phone{}, &model.Contact{}} {
+		var rowsTotal int64
+		for {
+			sub := db.db.WithContext(ctx).
+				Unscoped().
+				Model(v).
+				Select("id").
+				Where("deleted_at IS NOT NULL").
+				Limit(batchSize)
+			res := db.db.WithContext(ctx).
+				Unscoped().
+				Where("id IN (?)", sub).
+				Delete(v)
+
+			if res.Error != nil {
+				if errors.Is(res.Error, context.Canceled) {
+					return res.Error
+				}
+				db.opts.Opts.Logger.Error("db flush error", logging.Error(res.Error), slog.String("model", fmt.Sprintf("%T", v)))
+				break
+			}
+
+			if res.RowsAffected == 0 {
+				break
+			}
+
+			rowsTotal += res.RowsAffected
+		}
+
+		db.opts.Opts.Logger.Debug("db flush perfomed", slog.Int64("rowsAffected", rowsTotal), slog.String("model", fmt.Sprintf("%T", v)))
+	}
+	return nil
 }
 
 func (db *DB) PerfomMigrations(ctx context.Context) error {
