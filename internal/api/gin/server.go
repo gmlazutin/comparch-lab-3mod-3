@@ -192,13 +192,20 @@ func bindGinParamsJSON(c *gin.Context, obj any) error {
 	return nil
 }
 
+func makeAuthObject(tkn string, session *session.Session) *gen.AuthObject {
+	return &gen.AuthObject{
+		Expires: session.Expires,
+		Token:   tkn,
+	}
+}
+
 func (si *serverMethods) PostApiV1Auth(c *gin.Context) {
 	var req gen.AuthRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
 
-	_, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password, time.Now())
+	usr, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password, time.Now())
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrIncorrectPassword) {
 			respondError(c, http.StatusUnauthorized, "AUTH", err.Error())
@@ -210,9 +217,7 @@ func (si *serverMethods) PostApiV1Auth(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gen.AuthResponse{
-		Auth: gen.AuthObject{
-			Token: tkn,
-		},
+		Auth: *makeAuthObject(tkn, usr.SessionData),
 	})
 }
 
@@ -222,7 +227,7 @@ func (si *serverMethods) PostApiV1AuthRegister(c *gin.Context) {
 		return
 	}
 
-	_, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password, time.Now())
+	usr, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password, time.Now())
 	if err != nil {
 		if errors.Is(err, service.ErrUserAlreadyExists) {
 			respondError(c, http.StatusConflict, "AUTH_REGISTER", err.Error())
@@ -234,9 +239,7 @@ func (si *serverMethods) PostApiV1AuthRegister(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gen.RegisterResponse{
-		Auth: gen.AuthObject{
-			Token: tkn,
-		},
+		Auth: *makeAuthObject(tkn, usr.SessionData),
 	})
 }
 

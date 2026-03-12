@@ -4,5 +4,6 @@
 /* eslint-disable */
 export type AuthObject = {
     token: string;
+    expires: string;
 };
 

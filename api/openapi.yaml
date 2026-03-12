@@ -28,8 +28,12 @@ components:
       properties:
         token:
           type: string
+        expires:
+          type: string
+          format: date-time
       required:
         - token
+        - expires
 
     SelectorObject:
       type: object
@@ -104,6 +108,7 @@ components:
           type: string
         password:
           type: string
+          format: password
       required:
         - login
         - password
@@ -123,6 +128,7 @@ components:
           type: string
         password:
           type: string
+          format: password
       required:
         - login
         - password
