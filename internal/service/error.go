@@ -1,17 +1,39 @@
 package service
 
-import "errors"
+type AuthError struct {
+	message string
+}
+
+func (e AuthError) Error() string {
+	return e.message
+}
+
+type ContactsError struct {
+	message string
+}
+
+func (e ContactsError) Error() string {
+	return e.message
+}
+
+type CustomValidationError struct {
+	message string
+}
+
+func (e CustomValidationError) Error() string {
+	return e.message
+}
 
 var (
-	ErrIncorrectPassword = errors.New("incorrect password")
-	ErrUserAlreadyExists = errors.New("user already exists")
-	ErrUserNotFound      = errors.New("user not found")
+	ErrIncorrectPassword = AuthError{"incorrect password"}
+	ErrUserAlreadyExists = AuthError{"user already exists"}
+	ErrUserNotFound      = AuthError{"user not found"}
 
-	ErrInvalidToken = errors.New("invalid token")
+	ErrInvalidToken = AuthError{"invalid token"}
 
-	ErrContactNotFound = errors.New("contact not found")
+	ErrContactNotFound = ContactsError{"contact not found"}
 
-	ErrIncorrectSelectorValues = errors.New("incorrect selector")
-	ErrIncorrectPhone = errors.New("incorrect phone number")
-	ErrIncorrectBirthday = errors.New("incorrect birthday date")
+	ErrIncorrectSelectorValues = CustomValidationError{"incorrect selector"}
+	ErrIncorrectPhone          = CustomValidationError{"incorrect phone number"}
+	ErrIncorrectBirthday       = CustomValidationError{"incorrect birthday date"}
 )

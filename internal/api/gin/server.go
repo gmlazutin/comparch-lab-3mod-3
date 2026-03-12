@@ -157,7 +157,32 @@ func respondError(c *gin.Context, code int, step string, err string) {
 	})
 }
 
-//todo: hide server errors properly
+func translateError(err error) (int, string) {
+	msg := "please try again later"
+
+	cerr := service.CustomValidationError{}
+	if errors.As(err, &cerr) {
+		return http.StatusBadRequest, cerr.Error()
+	}
+
+	if errors.Is(err, service.ErrIncorrectPassword) {
+		return http.StatusUnauthorized, service.ErrIncorrectPassword.Error()
+	}
+	if errors.Is(err, service.ErrUserAlreadyExists) {
+		return http.StatusConflict, service.ErrUserAlreadyExists.Error()
+	}
+	if errors.Is(err, service.ErrUserNotFound) {
+		return http.StatusUnauthorized, service.ErrUserNotFound.Error()
+	}
+	if errors.Is(err, service.ErrInvalidToken) {
+		return http.StatusUnauthorized, service.ErrInvalidToken.Error()
+	}
+	if errors.Is(err, service.ErrContactNotFound) {
+		return http.StatusNotFound, service.ErrContactNotFound.Error()
+	}
+
+	return http.StatusInternalServerError, msg
+}
 
 func (s *APIServer) reqValidateStepHandler(c *gin.Context, message string, statusCode int) {
 	lasterr, ok := c.Get(ginApiSrvLastAuthError)
@@ -165,16 +190,13 @@ func (s *APIServer) reqValidateStepHandler(c *gin.Context, message string, statu
 	step := "REQUEST_VALIDATE"
 
 	if ok {
-		lasterror := lasterr.(error)
-		if errors.Is(lasterror, service.ErrInvalidToken) {
-			statusCode = http.StatusUnauthorized
-		} else {
-			statusCode = http.StatusInternalServerError
-		}
+		statusCode, message = translateError(lasterr.(error))
 	}
 
+	//todo: also mask the openapi validator errors
 	respondError(c, statusCode, step, message)
 }
+
 
 func getGinCtxSession(c *gin.Context) *session.Session {
 	v, _ := c.Get(ginApiSrvSession)
@@ -185,7 +207,7 @@ func getGinCtxSession(c *gin.Context) *session.Session {
 
 func bindGinParamsJSON(c *gin.Context, obj any) error {
 	if err := c.ShouldBindJSON(obj); err != nil {
-		respondError(c, http.StatusInternalServerError, "REQEST_PARAMETERS_BIND", err.Error())
+		respondError(c, http.StatusInternalServerError, "REQEST_PARAMETERS_BIND", "please try again later")
 		return err
 	}
 
@@ -199,6 +221,11 @@ func makeAuthObject(tkn string, session *session.Session) *gen.AuthObject {
 	}
 }
 
+func respondGinTranslatedError(c *gin.Context, err error, step string) {
+	status, msg := translateError(err)
+	respondError(c, status, step, msg)
+}
+
 func (si *serverMethods) AuthUser(c *gin.Context) {
 	var req gen.AuthRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
@@ -207,12 +234,7 @@ func (si *serverMethods) AuthUser(c *gin.Context) {
 
 	sess, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrIncorrectPassword) {
-			respondError(c, http.StatusUnauthorized, "AUTH", err.Error())
-			return
-		}
-
-		respondError(c, http.StatusInternalServerError, "AUTH", err.Error())
+		respondGinTranslatedError(c, err, "AUTH")
 		return
 	}
 
@@ -229,12 +251,7 @@ func (si *serverMethods) RegisterUser(c *gin.Context) {
 
 	sess, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserAlreadyExists) {
-			respondError(c, http.StatusConflict, "AUTH_REGISTER", err.Error())
-			return
-		}
-
-		respondError(c, http.StatusInternalServerError, "AUTH_REGISTER", err.Error())
+		respondGinTranslatedError(c, err, "AUTH_REGISTER")
 		return
 	}
 
@@ -322,7 +339,7 @@ func (si *serverMethods) AddContact(c *gin.Context) {
 		Note:     note,
 	}, phones)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, "ADD_CONTACT", err.Error())
+		respondGinTranslatedError(c, err, "ADD_CONTACT")
 		return
 	}
 
@@ -339,12 +356,7 @@ func (si *serverMethods) DeleteContact(c *gin.Context, contactId int) {
 		UserID: sess.UserID,
 	})
 	if err != nil {
-		if errors.Is(err, service.ErrContactNotFound) {
-			respondError(c, http.StatusNotFound, "DELETE_CONTACT", err.Error())
-			return
-		}
-
-		respondError(c, http.StatusInternalServerError, "DELETE_CONTACT", err.Error())
+		respondGinTranslatedError(c, err, "DELETE_CONTACT")
 		return
 	}
 
@@ -378,12 +390,7 @@ func (si *serverMethods) GetContact(c *gin.Context, contactId int) {
 		UserID: sess.UserID,
 	}, preload, notes)
 	if err != nil {
-		if errors.Is(err, service.ErrContactNotFound) {
-			respondError(c, http.StatusNotFound, "GET_CONTACT", err.Error())
-			return
-		}
-
-		respondError(c, http.StatusInternalServerError, "GET_CONTACT", err.Error())
+		respondGinTranslatedError(c, err, "GET_CONTACT")
 		return
 	}
 
@@ -401,7 +408,7 @@ func (si *serverMethods) GetContacts(c *gin.Context) {
 
 	conts, err := si.server.opts.Opts.ContactbookService.GetContacts(c, sess.UserID, *parseSelector(req.Selector))
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, "GET_CONTACTS", err.Error())
+		respondGinTranslatedError(c, err, "GET_CONTACTS")
 		return
 	}
 
