@@ -127,41 +127,41 @@ type SelectorObject struct {
 	Offset int `json:"offset"`
 }
 
-// PostV1AuthJSONRequestBody defines body for PostV1Auth for application/json ContentType.
-type PostV1AuthJSONRequestBody = AuthRequest
+// PostApiV1AuthJSONRequestBody defines body for PostApiV1Auth for application/json ContentType.
+type PostApiV1AuthJSONRequestBody = AuthRequest
 
-// PostV1AuthRegisterJSONRequestBody defines body for PostV1AuthRegister for application/json ContentType.
-type PostV1AuthRegisterJSONRequestBody = RegisterRequest
+// PostApiV1AuthRegisterJSONRequestBody defines body for PostApiV1AuthRegister for application/json ContentType.
+type PostApiV1AuthRegisterJSONRequestBody = RegisterRequest
 
-// PostV1ContactJSONRequestBody defines body for PostV1Contact for application/json ContentType.
-type PostV1ContactJSONRequestBody = AddContactRequest
+// PostApiV1ContactJSONRequestBody defines body for PostApiV1Contact for application/json ContentType.
+type PostApiV1ContactJSONRequestBody = AddContactRequest
 
-// PostV1ContactContactIdJSONRequestBody defines body for PostV1ContactContactId for application/json ContentType.
-type PostV1ContactContactIdJSONRequestBody = GetContactRequest
+// PostApiV1ContactContactIdJSONRequestBody defines body for PostApiV1ContactContactId for application/json ContentType.
+type PostApiV1ContactContactIdJSONRequestBody = GetContactRequest
 
-// PostV1ContactsJSONRequestBody defines body for PostV1Contacts for application/json ContentType.
-type PostV1ContactsJSONRequestBody = GetContactsRequest
+// PostApiV1ContactsJSONRequestBody defines body for PostApiV1Contacts for application/json ContentType.
+type PostApiV1ContactsJSONRequestBody = GetContactsRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// User authentication
-	// (POST /v1/auth)
-	PostV1Auth(c *gin.Context)
+	// (POST /api/v1/auth)
+	PostApiV1Auth(c *gin.Context)
 	// Register new user
-	// (POST /v1/auth/register)
-	PostV1AuthRegister(c *gin.Context)
+	// (POST /api/v1/auth/register)
+	PostApiV1AuthRegister(c *gin.Context)
 	// Add a new contact
-	// (POST /v1/contact)
-	PostV1Contact(c *gin.Context)
+	// (POST /api/v1/contact)
+	PostApiV1Contact(c *gin.Context)
 	// Delete a contact
-	// (DELETE /v1/contact/{contact_id})
-	DeleteV1ContactContactId(c *gin.Context, contactId int)
+	// (DELETE /api/v1/contact/{contact_id})
+	DeleteApiV1ContactContactId(c *gin.Context, contactId int)
 	// Retrieve a contact
-	// (POST /v1/contact/{contact_id})
-	PostV1ContactContactId(c *gin.Context, contactId int)
+	// (POST /api/v1/contact/{contact_id})
+	PostApiV1ContactContactId(c *gin.Context, contactId int)
 	// Retrieve a list of contacts
-	// (POST /v1/contacts)
-	PostV1Contacts(c *gin.Context)
+	// (POST /api/v1/contacts)
+	PostApiV1Contacts(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -173,8 +173,8 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(c *gin.Context)
 
-// PostV1Auth operation middleware
-func (siw *ServerInterfaceWrapper) PostV1Auth(c *gin.Context) {
+// PostApiV1Auth operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1Auth(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -183,11 +183,11 @@ func (siw *ServerInterfaceWrapper) PostV1Auth(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.PostV1Auth(c)
+	siw.Handler.PostApiV1Auth(c)
 }
 
-// PostV1AuthRegister operation middleware
-func (siw *ServerInterfaceWrapper) PostV1AuthRegister(c *gin.Context) {
+// PostApiV1AuthRegister operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1AuthRegister(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -196,11 +196,11 @@ func (siw *ServerInterfaceWrapper) PostV1AuthRegister(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.PostV1AuthRegister(c)
+	siw.Handler.PostApiV1AuthRegister(c)
 }
 
-// PostV1Contact operation middleware
-func (siw *ServerInterfaceWrapper) PostV1Contact(c *gin.Context) {
+// PostApiV1Contact operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1Contact(c *gin.Context) {
 
 	c.Set(BearerAuthScopes, []string{})
 
@@ -211,11 +211,11 @@ func (siw *ServerInterfaceWrapper) PostV1Contact(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.PostV1Contact(c)
+	siw.Handler.PostApiV1Contact(c)
 }
 
-// DeleteV1ContactContactId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteV1ContactContactId(c *gin.Context) {
+// DeleteApiV1ContactContactId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteApiV1ContactContactId(c *gin.Context) {
 
 	var err error
 
@@ -237,11 +237,11 @@ func (siw *ServerInterfaceWrapper) DeleteV1ContactContactId(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.DeleteV1ContactContactId(c, contactId)
+	siw.Handler.DeleteApiV1ContactContactId(c, contactId)
 }
 
-// PostV1ContactContactId operation middleware
-func (siw *ServerInterfaceWrapper) PostV1ContactContactId(c *gin.Context) {
+// PostApiV1ContactContactId operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1ContactContactId(c *gin.Context) {
 
 	var err error
 
@@ -263,11 +263,11 @@ func (siw *ServerInterfaceWrapper) PostV1ContactContactId(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.PostV1ContactContactId(c, contactId)
+	siw.Handler.PostApiV1ContactContactId(c, contactId)
 }
 
-// PostV1Contacts operation middleware
-func (siw *ServerInterfaceWrapper) PostV1Contacts(c *gin.Context) {
+// PostApiV1Contacts operation middleware
+func (siw *ServerInterfaceWrapper) PostApiV1Contacts(c *gin.Context) {
 
 	c.Set(BearerAuthScopes, []string{})
 
@@ -278,7 +278,7 @@ func (siw *ServerInterfaceWrapper) PostV1Contacts(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.PostV1Contacts(c)
+	siw.Handler.PostApiV1Contacts(c)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -308,36 +308,36 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.POST(options.BaseURL+"/v1/auth", wrapper.PostV1Auth)
-	router.POST(options.BaseURL+"/v1/auth/register", wrapper.PostV1AuthRegister)
-	router.POST(options.BaseURL+"/v1/contact", wrapper.PostV1Contact)
-	router.DELETE(options.BaseURL+"/v1/contact/:contact_id", wrapper.DeleteV1ContactContactId)
-	router.POST(options.BaseURL+"/v1/contact/:contact_id", wrapper.PostV1ContactContactId)
-	router.POST(options.BaseURL+"/v1/contacts", wrapper.PostV1Contacts)
+	router.POST(options.BaseURL+"/api/v1/auth", wrapper.PostApiV1Auth)
+	router.POST(options.BaseURL+"/api/v1/auth/register", wrapper.PostApiV1AuthRegister)
+	router.POST(options.BaseURL+"/api/v1/contact", wrapper.PostApiV1Contact)
+	router.DELETE(options.BaseURL+"/api/v1/contact/:contact_id", wrapper.DeleteApiV1ContactContactId)
+	router.POST(options.BaseURL+"/api/v1/contact/:contact_id", wrapper.PostApiV1ContactContactId)
+	router.POST(options.BaseURL+"/api/v1/contacts", wrapper.PostApiV1Contacts)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYW2/jNhP9KwK/71GInW76UL0lvSF96AbZbvsQBAUtjmPuSqR2OHLqBvrvBS+yZF0s",
-	"Yxt7s2ieLEucCw/PmRnpiaU6L7QCRYYlT8ykK8i5u7wU4nutiKd0C59KMGRvFqgLQJLgliwk0krwjb1e",
-	"asw5sYQJTsBiRpsCWMIMoVQPrIqZVJIkz25WWnlrSZC7i/8jLFnC/jdrcpmFRGaXQjiLt4sPkJL1Exxz",
-	"RL6x/xXPwXrpBVSahh5UMUP4VEoEwZI7bx43W+kmer+NqLcptKExhVYG+tikfsHU/oKfenvVcLQ2BL1I",
-	"0tygzDluWptdaJ0BV9a8sLbTOPhlccvb4M5LWo3lQfojqOlAftmY81GuZfpBqsFzLrgxjxrFdGjvo2Ux",
-	"nsXYsfKSVpOcbUDqZuDMh6Lu8uBfKq0NhVQED4Cfo5TAncPFulepHSSkYPGA+Ipx1f0AGRAMCK+38kdE",
-	"jWNQgn04uFtDUEyTyK2Kg5uhPH8GmiqcBUKmuZjE0y9rEH2UtPp197C2Su/qOYRoGU0le/xS1kQzo9gY",
-	"yCAlf0T7wr0L60aUtnVzP5XHxLYPp38HgAEB9BLZX9hHdPw8Bd8J8LCqv8vDvqIUX2QgRrLxft+qbHMA",
-	"a2tXu3ZDOd3CgzQE+OUbRpPJqZtGRwJ9CGQu3e1cKpmXOUvm8QCf9HJpYHJdJ6lgFIcg/fRsQYW0REmb",
-	"d3aPPqUr4Ah4GQBZuH8/1Q3tlz9+Y7GfQR1J3NOmw62IClZVbpZcamsvwKQoC5JasaTuoVdaf4wub66t",
-	"oaQMBp+sAY23Oj+bn80dDAUoXkiWsDdn87M37thp5bKerc9n9SEW2rPNAs1t5GvBEnajDf1+7vblcQJD",
-	"V1ps6kICyhnxoshk6sxmH4xWzcx9CD9qrle7h0FYgrvh+ecy/mY+f+bQgdwu9i7u9jkoCs4jU6YpGLMs",
-	"M4vqxTMm0u7rA3lcqzXPpIiwhslGPz91dFczIo3RtmhUMfv2lCgQoOJZZADXgJEfVJwcy9x3DfbeAEZ8",
-	"59jciprnMww17RDC1/XvSMTvFvoTk79X3Qcg92vwJdL/u1NF95TKELjYRPCXNGReIPHr04wUPEalCX3N",
-	"0r415O4jfOgkxyryvW8upy71/S8bA0iHJREXAkSL8NnmP1Xx3ytbKzXKv+EFFfkwc7Hkbnfauruv7ttS",
-	"uBQi4k4HNfU7Upg9hYs/paj8tGVfwPvK8C/mW22En2s3xXPkORCgcfnYgdxNVfW7f8KaGKxL9LiFVW8a",
-	"vT+iCoa/NOwRgkfmVQpbKVzML04Vuj4DpSla6lJ9hVL0fIt4o8T4kCZ0QqE9f6vrfyU7casb+PK1h10I",
-	"hBLWrxp/1fjnafw2EKit8t1+aw6cPQ07tiLNF5ekOUCT5lWUX/sM2hJFJg1FehltxVBVVfVPAAAA///m",
-	"A7+2nx4AAA==",
+	"H4sIAAAAAAAC/+xYTW/jNhP+KwLf9yjETjc9VDenX0gP3SDbbQ+BUdDiOOauRGqHI6duoP9e8EOWbEmW",
+	"sY29WTSnKBLngw+fZ2bMJ5bqvNAKFBmWPDGTriDn7nEmxPdaEU/pDj6VYMi+LFAXgCTBLVlIpJXgG/u8",
+	"1JhzYgkTnIDFjDYFsIQZQqkeWBUzqSRJnt2utPLWkiB3D/9HWLKE/W/S5DIJiUxmQjiLt4sPkJL1Exxz",
+	"RL6x/yueg/XSCag09X2oYobwqZQIgiX33jxutrKf6HwbUW9TaENjCq0MdLFJ/YKx/QU/9faq/mhtCDqR",
+	"pLlFmXPctDa70DoDrqx5YW3HcfDL4pa33p2XtBrKg/RHUOOB/LIh54Ncy/SDVL3nXHBjHjWK8dDeR8ti",
+	"OIuhY+UlrUY524C0n4Ez74u6y4N/qbQ2FFIRPAB+jlICd44X60Gl7iEhBYt7xFcMq+4HyICgR3idlT8i",
+	"ahyCEuzH3t0agmKcRG5VHNz05fkz0FjhLBAyzcUonn5Zg+ijpNWvu4e1Vfq+nkOIltFYsqcvZU00M4iN",
+	"gQxS8kd0KNy7sG5AaVs387E8RrZ9PP33AOgRQCeRw4V9QMfPU/CdAI+r+rs87CpK8UUGYiAb7/etyjZH",
+	"sLZ2tWvXl9MdPEhDgF++YTSZnLtp7EmgC4HMpXudSyXzMmfJNO7hk14uDYyu20sqGMUhSDc9W1AhLVHS",
+	"5p3do0/pGjgCzgIgC/ffT3VD++WP31jsZ1BHEve16XArooJVlZsll9raCzApyoKkViype+i11h+j2e2N",
+	"NZSUQe+XNaDxVpcX04upg6EAxQvJEvbmYnrxxh07rVzWE17IyfpyUh9koT3jLNjcRr8RLGG32tCskL9f",
+	"uu15uMDQtRabup6Acna8KDKZOsvJB6NVM3ofQ5Oa8tXumRCW4F54GrrEv5lOnzl04LiLvQu//Q6KgvPI",
+	"lGkKxizLzIJ79YyJtNt7Tx43as0zKSKsYbLRL88d3ZWOSGO0rR1VzL49JwoEqHgWGcA1YOTnFafKMvfN",
+	"g703gBHfOTa3ok33CYbydiTv62p4Iv7vl/0za6BT63uQ92vwJargu3NF98zKELjYRPCXNGReIP/r04wU",
+	"PEalCV2uZn9r7B3hfWgvpyr5nYuYcxf+7nVHD+BhScSFANHifbb5T9X/98pWTY3yb3hBJT8MYiy53x3B",
+	"7ufVvK2ImRARd3Ko2d+jiMlTePhTisqPYfaXeVcg/hd7WyLhz42b8DnyHAjQuLTssO4mrvpeIGFNGLbP",
+	"97gFWWdSnZ9QDP23EAf04MF5VcRWEVfTq3OFrs9AaYqWulRfoSI93yLeCDI+sh2dUWvP3/S6l2hnbno9",
+	"F2MHCIZAKGH9KvNXmX+ezO8CgdpC73Zec/wwatiphWm+uDLNEdI0r9r82ofSljYyaSjSy2irh6qqqn8C",
+	"AAD//3TSQ6rFHgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
