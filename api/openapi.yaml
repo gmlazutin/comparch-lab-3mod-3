@@ -53,7 +53,6 @@ components:
           type: boolean
       required:
         - enabled
-        - primaryOnly
 
     PhoneObject:
       type: object
@@ -172,7 +171,6 @@ components:
       required:
         - name
         - birthday
-        - initialPhones
 
     AddContactResponse:
       type: object
@@ -189,9 +187,6 @@ components:
           $ref: '#/components/schemas/PreloadObject'
         withNote:
           type: boolean
-      required:
-        - preload
-        - withNote
 
     GetContactResponse:
       type: object
