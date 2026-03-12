@@ -1,13 +1,14 @@
 package gorm
 
 import (
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage/gorm/model"
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
+
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage/gorm/model"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
@@ -32,6 +33,10 @@ type Options struct {
 }
 
 func New(opts Options) (*DB, error) {
+	if opts.Opts.Logger == nil {
+		opts.Opts.Logger = logging.EmptyLogger()
+	}
+
 	var dialector gorm.Dialector
 	switch opts.Driver {
 	case "pgsql":

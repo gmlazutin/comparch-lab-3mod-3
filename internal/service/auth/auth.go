@@ -1,13 +1,15 @@
 package auth
 
 import (
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth/session"
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
 	"context"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth/session"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,6 +35,13 @@ type Service struct {
 }
 
 func New(options Options) *Service {
+	if options.SessionExpireTimeout == 0 {
+		options.SessionExpireTimeout = time.Hour
+	}
+	if options.ServiceOpts.Logger == nil {
+		options.ServiceOpts.Logger = logging.EmptyLogger()
+	}
+
 	return &Service{
 		opts: options,
 	}

@@ -1,9 +1,10 @@
 package api
 
 import (
+	"log/slog"
+
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/contactbook"
-	"log/slog"
 )
 
 type APIServerOptions struct {
@@ -11,4 +12,5 @@ type APIServerOptions struct {
 	ContactbookService *contactbook.Service
 	Logger             *slog.Logger
 	Addr               string
+	PublicUrl          string
 }

@@ -1,6 +1,14 @@
 package main
 
 import (
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api/gin"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
@@ -10,13 +18,6 @@ import (
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/contactbook"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage/gorm"
-	"context"
-	"log/slog"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
 )
 
 func getLogLvl() slog.Leveler {
@@ -42,6 +43,11 @@ func getDB() (string, string) {
 
 func getJWTSecret() []byte {
 	return []byte(os.Getenv("APP_JWT_SECRET"))
+}
+
+func getPublicUrl() string {
+	origin := os.Getenv("APP_PUBLIC_URL")
+	return origin
 }
 
 func main() {
@@ -85,14 +91,18 @@ func main() {
 		ServiceOpts:    sopts,
 	})
 
-	srv := gin.NewAPIServer(gin.Options{
+	srv, err := gin.NewAPIServer(gin.Options{
 		Opts: api.APIServerOptions{
 			AuthService:        aservice,
 			ContactbookService: cbservice,
 			Logger:             logger,
 			Addr:               getAddr(),
+			PublicUrl:          getPublicUrl(),
 		},
 	})
+	if err != nil {
+		logger.Error("failed to create GIN api server", logging.Error(err))
+	}
 
 	logger.Info("Running web server...", slog.String("addr", getAddr()))
 

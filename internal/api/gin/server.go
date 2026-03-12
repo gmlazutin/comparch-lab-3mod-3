@@ -19,6 +19,7 @@ import (
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/contactbook"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 	oapitypes "github.com/oapi-codegen/runtime/types"
@@ -36,7 +37,6 @@ type Options struct {
 }
 
 type APIServer struct {
-	gin  *gin.Engine
 	opts Options
 	http *http.Server
 }
@@ -46,22 +46,36 @@ type serverMethods struct {
 	server *APIServer
 }
 
-func NewAPIServer(options Options) *APIServer {
+func NewAPIServer(options Options) (*APIServer, error) {
 	//enforce ReleaseMode for gin to avoid custom debug info
 	gin.SetMode(gin.ReleaseMode)
 
+	if options.Opts.Logger == nil {
+		options.Opts.Logger = logging.EmptyLogger()
+	}
 	options.Opts.Logger = options.Opts.Logger.With(logging.Service("ginApiServer"))
 
-	r := gin.Default()
+	r := gin.New()
 
 	srv := &APIServer{
-		gin:  gin.New(),
 		opts: options,
 		http: &http.Server{
 			Addr:    options.Opts.Addr,
 			Handler: r,
 		},
 	}
+
+	corsconfig := cors.Config{
+		AllowOrigins:     []string{options.Opts.PublicUrl},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}
+	if err := corsconfig.Validate(); err != nil {
+		return nil, fmt.Errorf("ginApiServer: cors config validation fail: %w", err)
+	}
+
+	r.Use(cors.New(corsconfig))
 
 	if options.Opts.Logger.Enabled(nil, slog.LevelDebug) {
 		r.Use(srv.slogLogger)
@@ -89,7 +103,7 @@ func NewAPIServer(options Options) *APIServer {
 		},
 	})
 
-	return srv
+	return srv, nil
 }
 
 func (s *APIServer) Start() error {

@@ -1,10 +1,13 @@
 package session
 
 import (
-	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
 	"context"
+	"crypto/rand"
 	"fmt"
+	"io"
 	"time"
+
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -15,6 +18,13 @@ type JWTSessionProvider struct {
 }
 
 func NewJWTSessionProvider(secret []byte) *JWTSessionProvider {
+	if len(secret) == 0 {
+		secret = make([]byte, 32)
+		_, err := io.ReadFull(rand.Reader, secret)
+		if err != nil {
+			panic("jwtSessionProvider: unable to read secret for JWT from cryptosource (because secret param is empty): " + err.Error())
+		}
+	}
 	return &JWTSessionProvider{
 		secret: secret,
 	}

@@ -2,3 +2,4 @@
 .env
 dist
 *.db
+web/node_modules
