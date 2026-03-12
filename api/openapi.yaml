@@ -1,0 +1,374 @@
+openapi: 3.0.3
+info:
+  title: ContactBook API
+  version: 1.0.0
+  description: ContactBook API
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorObject:
+      type: object
+      properties:
+        step:
+          type: string
+        error:
+          type: string
+      required:
+        - step
+        - error
+
+    SelectorObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 0
+      required:
+        - offset
+        - limit
+
+    PreloadObject:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        primaryOnly:
+          type: boolean
+      required:
+        - enabled
+        - primaryOnly
+
+    PhoneObject:
+      type: object
+      properties:
+        id:
+          type: integer
+        phone:
+          type: string
+        isPrimary:
+          type: boolean
+      required:
+        - id
+        - phone
+        - isPrimary
+
+    ContactObject:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        birthday:
+          type: string
+          format: date
+        note:
+          type: string
+        phones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhoneObject'
+      required:
+        - id
+        - name
+        - birthday
+        - phones
+
+    AddPhoneObject:
+      type: object
+      properties:
+        phone:
+          type: string
+        isPrimary:
+          type: boolean
+      required:
+        - phone
+        - isPrimary
+
+    AuthRequest:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+      required:
+        - login
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+    GetContactsRequest:
+      type: object
+      properties:
+        selector:
+          $ref: '#/components/schemas/SelectorObject'
+      required:
+        - selector
+
+    GetContactsResponse:
+      type: object
+      properties:
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactObject'
+
+    AddContactRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        birthday:
+          type: string
+          format: date
+        note:
+          type: string
+        initialPhones:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddPhoneObject'
+      required:
+        - name
+        - birthday
+        - initialPhones
+
+    AddContactResponse:
+      type: object
+      properties:
+        contact:
+          $ref: '#/components/schemas/ContactObject'
+
+    GetContactRequest:
+      type: object
+      properties:
+        preload:
+          $ref: '#/components/schemas/PreloadObject'
+        withNote:
+          type: boolean
+      required:
+        - preload
+        - withNote
+
+    GetContactResponse:
+      type: object
+      properties:
+        contact:
+          $ref: '#/components/schemas/ContactObject'
+
+    DeleteContactResponse:
+      type: object
+
+paths:
+  /api/v1/auth:
+    post:
+      summary: User authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Invalid login or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+
+  /api/v1/contacts:
+    post:
+      summary: Retrieve a list of contacts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetContactsRequest'
+      responses:
+        '200':
+          description: Contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetContactsResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+
+  /api/v1/contact:
+    post:
+      summary: Add a new contact
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddContactRequest'
+      responses:
+        '200':
+          description: Contact added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddContactResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+
+  /api/v1/contact/{contact_id}:
+    post:
+      summary: Retrieve a contact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: contact_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetContactRequest'
+      responses:
+        '200':
+          description: Contact retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetContactResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+
+    delete:
+      summary: Delete a contact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: contact_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Contact deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteContactResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
