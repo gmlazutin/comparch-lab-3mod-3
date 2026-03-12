@@ -1,0 +1,57 @@
+package storage
+
+import (
+	"context"
+	"time"
+)
+
+type Contact struct {
+	ID     uint
+	UserID uint
+
+	Name     string
+	Birthday time.Time
+
+	Note string
+
+	Phones []Phone
+}
+
+type AddContactData struct {
+	//ID will be overwritten
+	Contact Contact
+	//ID, ContactID will be overwritten
+	InitialPhones []Phone
+}
+
+type ContactPhonesPreload struct {
+	Enabled     bool
+	PrimaryOnly bool
+}
+
+type GetContactData struct {
+	ID     uint
+	UserID uint
+
+	Preload  ContactPhonesPreload
+	WithNote bool
+}
+
+type GetContactsData struct {
+	Selector Selector
+	//Data.ID will be ignored
+	Data GetContactData
+}
+
+type DeleteContactData struct {
+	ID     uint
+	UserID uint
+}
+
+type ContactStorage interface {
+	AddContact(ctx context.Context, data AddContactData) (*Contact, error)
+	GetContact(ctx context.Context, data GetContactData) (*Contact, error)
+	GetContacts(ctx context.Context, data GetContactsData) ([]Contact, error)
+	//UpdateContact(ctx context.Context, uid uint, data UpdateContactData) (*Contact, error)
+	DeleteContact(ctx context.Context, data DeleteContactData) error
+}
