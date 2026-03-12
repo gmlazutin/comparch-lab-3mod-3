@@ -199,7 +199,7 @@ func makeAuthObject(tkn string, session *session.Session) *gen.AuthObject {
 	}
 }
 
-func (si *serverMethods) PostApiV1Auth(c *gin.Context) {
+func (si *serverMethods) AuthUser(c *gin.Context) {
 	var req gen.AuthRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return
@@ -221,7 +221,7 @@ func (si *serverMethods) PostApiV1Auth(c *gin.Context) {
 	})
 }
 
-func (si *serverMethods) PostApiV1AuthRegister(c *gin.Context) {
+func (si *serverMethods) RegisterUser(c *gin.Context) {
 	var req gen.RegisterRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return
@@ -290,7 +290,7 @@ func genContactResponse(cont contactbook.Contact, ph []contactbook.Phone) *gen.C
 	}
 }
 
-func (si *serverMethods) PostApiV1Contact(c *gin.Context) {
+func (si *serverMethods) AddContact(c *gin.Context) {
 	var req gen.AddContactRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return
@@ -331,7 +331,7 @@ func (si *serverMethods) PostApiV1Contact(c *gin.Context) {
 	})
 }
 
-func (si *serverMethods) DeleteApiV1ContactContactId(c *gin.Context, contactId int) {
+func (si *serverMethods) DeleteContact(c *gin.Context, contactId int) {
 	sess := getGinCtxSession(c)
 
 	err := si.server.opts.Opts.ContactbookService.DeleteContact(c, contactbook.ContactID{
@@ -351,7 +351,7 @@ func (si *serverMethods) DeleteApiV1ContactContactId(c *gin.Context, contactId i
 	c.JSON(http.StatusOK, gen.DeleteContactResponse{})
 }
 
-func (si *serverMethods) PostApiV1ContactContactId(c *gin.Context, contactId int) {
+func (si *serverMethods) GetContact(c *gin.Context, contactId int) {
 	var req gen.GetContactRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return
@@ -392,7 +392,7 @@ func (si *serverMethods) PostApiV1ContactContactId(c *gin.Context, contactId int
 	})
 }
 
-func (si *serverMethods) PostApiV1Contacts(c *gin.Context) {
+func (si *serverMethods) GetContacts(c *gin.Context) {
 	var req gen.GetContactsRequest
 	if err := bindGinParamsJSON(c, &req); err != nil {
 		return

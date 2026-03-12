@@ -15,7 +15,7 @@ export default function Contacts() {
 
   async function load() {
     try {
-      const res = await DefaultService.postApiV1Contacts({
+      const res = await DefaultService.getContacts({
         selector: {
           offset: page * 10,
           limit: 10,
@@ -39,7 +39,7 @@ export default function Contacts() {
 
   async function openContact(id: number) {
     try {
-      const res = await DefaultService.postApiV1Contact1(
+      const res = await DefaultService.getContact(
         id,
         {
           preload: { enabled: true, primaryOnly: false },
@@ -57,7 +57,7 @@ export default function Contacts() {
     if (!confirm("delete?")) return;
 
     try {
-      await DefaultService.deleteApiV1Contact(id);
+      await DefaultService.deleteContact(id);
       load();
     } catch (e: any) {
       alert(e.body?.error);

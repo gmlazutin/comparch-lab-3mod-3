@@ -12,7 +12,7 @@ export default function Register() {
 
   async function submit() {
     try {
-      const res = await DefaultService.postApiV1AuthRegister({
+      const res = await DefaultService.registerUser({
         login,
         password,
       });

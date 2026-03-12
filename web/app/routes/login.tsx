@@ -12,7 +12,7 @@ export default function Login() {
 
   async function submit() {
     try {
-      const res = await DefaultService.postApiV1Auth({
+      const res = await DefaultService.authUser({
         login,
         password,
       });

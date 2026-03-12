@@ -23,7 +23,7 @@ export class DefaultService {
      * @returns AuthResponse Authentication successful
      * @throws ApiError
      */
-    public static postApiV1Auth(
+    public static authUser(
         requestBody: AuthRequest,
     ): CancelablePromise<AuthResponse> {
         return __request(OpenAPI, {
@@ -44,7 +44,7 @@ export class DefaultService {
      * @returns RegisterResponse Registration successful
      * @throws ApiError
      */
-    public static postApiV1AuthRegister(
+    public static registerUser(
         requestBody: RegisterRequest,
     ): CancelablePromise<RegisterResponse> {
         return __request(OpenAPI, {
@@ -65,7 +65,7 @@ export class DefaultService {
      * @returns GetContactsResponse Contacts retrieved successfully
      * @throws ApiError
      */
-    public static postApiV1Contacts(
+    public static getContacts(
         requestBody: GetContactsRequest,
     ): CancelablePromise<GetContactsResponse> {
         return __request(OpenAPI, {
@@ -86,7 +86,7 @@ export class DefaultService {
      * @returns AddContactResponse Contact added successfully
      * @throws ApiError
      */
-    public static postApiV1Contact(
+    public static addContact(
         requestBody: AddContactRequest,
     ): CancelablePromise<AddContactResponse> {
         return __request(OpenAPI, {
@@ -108,7 +108,7 @@ export class DefaultService {
      * @returns GetContactResponse Contact retrieved successfully
      * @throws ApiError
      */
-    public static postApiV1Contact1(
+    public static getContact(
         contactId: number,
         requestBody: GetContactRequest,
     ): CancelablePromise<GetContactResponse> {
@@ -134,7 +134,7 @@ export class DefaultService {
      * @returns DeleteContactResponse Contact deleted successfully
      * @throws ApiError
      */
-    public static deleteApiV1Contact(
+    public static deleteContact(
         contactId: number,
     ): CancelablePromise<DeleteContactResponse> {
         return __request(OpenAPI, {

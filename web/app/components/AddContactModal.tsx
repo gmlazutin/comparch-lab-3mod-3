@@ -18,7 +18,7 @@ export default function AddContactModal({ close, reload }: any) {
     }
 
     try {
-      await DefaultService.postApiV1Contact({
+      await DefaultService.addContact({
         name,
         birthday,
         note,
