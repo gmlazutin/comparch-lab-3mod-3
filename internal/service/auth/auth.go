@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -85,10 +84,7 @@ func (s *Service) CreateUserSimple(ctx context.Context, login, password string) 
 		},
 	})
 	if err != nil {
-		if errors.Is(err, storage.ErrAlreadyExists) {
-			err = service.ErrUserAlreadyExists
-		}
-
+		err = service.TranslateStorageError(err)
 		return nil, "", s.wrapErr(fmt.Errorf("failed to create user with login %q: %w", login, err))
 	}
 	sess := &session.Session{
@@ -109,10 +105,7 @@ func (s *Service) AuthUserByPassword(ctx context.Context, login, password string
 		WithCredentials: true,
 	})
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			err = service.ErrUserNotFound
-		}
-
+		err = service.TranslateStorageError(err)
 		return nil, "", s.wrapErr(fmt.Errorf("failed to authenticate user with login %q: %w", login, err))
 	}
 
@@ -146,10 +139,7 @@ func (s *Service) GetUserBySession(ctx context.Context, session *session.Session
 		WithCredentials: false,
 	})
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			err = service.ErrUserNotFound
-		}
-
+		err = service.TranslateStorageError(err)
 		return nil, s.wrapErr(fmt.Errorf("failed to get user %d: %w", session.UserID, err))
 	}
 

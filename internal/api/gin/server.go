@@ -150,14 +150,14 @@ func (s *APIServer) authFunc(ctx context.Context, ai *openapi3filter.Authenticat
 	return nil
 }
 
-func respondError(c *gin.Context, code int, step string, err string) {
+func (s *APIServer) respondError(c *gin.Context, code int, step string, err string) {
 	c.JSON(code, gen.ErrorObject{
 		Step:  step,
 		Error: err,
 	})
 }
 
-func translateError(err error) (int, string) {
+func (s *APIServer) translateError(err error) (int, string) {
 	msg := "please try again later"
 
 	cerr := service.CustomValidationError{}
@@ -181,6 +181,7 @@ func translateError(err error) (int, string) {
 		return http.StatusNotFound, service.ErrContactNotFound.Error()
 	}
 
+	s.opts.Opts.Logger.Error("unable to process error", logging.Error(err))
 	return http.StatusInternalServerError, msg
 }
 
@@ -190,73 +191,73 @@ func (s *APIServer) reqValidateStepHandler(c *gin.Context, message string, statu
 	step := "REQUEST_VALIDATE"
 
 	if ok {
-		statusCode, message = translateError(lasterr.(error))
+		statusCode, message = s.translateError(lasterr.(error))
 	}
 
 	//todo: also mask the openapi validator errors
-	respondError(c, statusCode, step, message)
+	s.respondError(c, statusCode, step, message)
 }
 
-
-func getGinCtxSession(c *gin.Context) *session.Session {
+func (si *serverMethods) getGinCtxSession(c *gin.Context) *session.Session {
 	v, _ := c.Get(ginApiSrvSession)
 	return v.(*session.Session)
 }
 
 //serverMethods
 
-func bindGinParamsJSON(c *gin.Context, obj any) error {
+func (si *serverMethods) bindGinParamsJSON(c *gin.Context, obj any) error {
 	if err := c.ShouldBindJSON(obj); err != nil {
-		respondError(c, http.StatusInternalServerError, "REQEST_PARAMETERS_BIND", "please try again later")
+		si.server.opts.Opts.Logger.Error("bind failture", logging.Error(err))
+		si.server.respondError(c, http.StatusInternalServerError, "REQEST_PARAMETERS_BIND", "please try again later")
 		return err
 	}
 
 	return nil
 }
 
-func makeAuthObject(tkn string, session *session.Session) *gen.AuthObject {
+func (si *serverMethods) makeAuthObject(tkn string, session *session.Session) *gen.AuthObject {
 	return &gen.AuthObject{
 		Expires: session.Expires,
 		Token:   tkn,
 	}
 }
 
-func respondGinTranslatedError(c *gin.Context, err error, step string) {
-	status, msg := translateError(err)
-	respondError(c, status, step, msg)
+func (si *serverMethods) respondGinTranslatedError(c *gin.Context, err error, step string) {
+	status, msg := si.server.translateError(err)
+	si.server.respondError(c, status, step, msg)
 }
 
 func (si *serverMethods) AuthUser(c *gin.Context) {
 	var req gen.AuthRequest
-	if err := bindGinParamsJSON(c, &req); err != nil {
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
 
 	sess, tkn, err := si.server.opts.Opts.AuthService.AuthUserByPassword(c, req.Login, req.Password)
 	if err != nil {
-		respondGinTranslatedError(c, err, "AUTH")
+		si.respondGinTranslatedError(c, err, "AUTH")
 		return
 	}
 
 	c.JSON(http.StatusOK, gen.AuthResponse{
-		Auth: *makeAuthObject(tkn, sess),
+		Auth: *si.makeAuthObject(tkn, sess),
 	})
 }
 
 func (si *serverMethods) RegisterUser(c *gin.Context) {
 	var req gen.RegisterRequest
-	if err := bindGinParamsJSON(c, &req); err != nil {
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
 
 	sess, tkn, err := si.server.opts.Opts.AuthService.CreateUserSimple(c, req.Login, req.Password)
 	if err != nil {
-		respondGinTranslatedError(c, err, "AUTH_REGISTER")
+		si.respondGinTranslatedError(c, err, "AUTH_REGISTER")
 		return
 	}
 
 	c.JSON(http.StatusOK, gen.RegisterResponse{
-		Auth: *makeAuthObject(tkn, sess),
+		Auth: *si.makeAuthObject(tkn, sess),
 	})
 }
 
@@ -309,10 +310,10 @@ func genContactResponse(cont contactbook.Contact, ph []contactbook.Phone) *gen.C
 
 func (si *serverMethods) AddContact(c *gin.Context) {
 	var req gen.AddContactRequest
-	if err := bindGinParamsJSON(c, &req); err != nil {
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
-	sess := getGinCtxSession(c)
+	sess := si.getGinCtxSession(c)
 	var note string
 	if req.Note != nil {
 		note = *req.Note
@@ -339,7 +340,7 @@ func (si *serverMethods) AddContact(c *gin.Context) {
 		Note:     note,
 	}, phones)
 	if err != nil {
-		respondGinTranslatedError(c, err, "ADD_CONTACT")
+		si.respondGinTranslatedError(c, err, "ADD_CONTACT")
 		return
 	}
 
@@ -349,14 +350,14 @@ func (si *serverMethods) AddContact(c *gin.Context) {
 }
 
 func (si *serverMethods) DeleteContact(c *gin.Context, contactId int) {
-	sess := getGinCtxSession(c)
+	sess := si.getGinCtxSession(c)
 
 	err := si.server.opts.Opts.ContactbookService.DeleteContact(c, contactbook.ContactID{
 		ID:     uint(contactId),
 		UserID: sess.UserID,
 	})
 	if err != nil {
-		respondGinTranslatedError(c, err, "DELETE_CONTACT")
+		si.respondGinTranslatedError(c, err, "DELETE_CONTACT")
 		return
 	}
 
@@ -365,10 +366,10 @@ func (si *serverMethods) DeleteContact(c *gin.Context, contactId int) {
 
 func (si *serverMethods) GetContact(c *gin.Context, contactId int) {
 	var req gen.GetContactRequest
-	if err := bindGinParamsJSON(c, &req); err != nil {
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
-	sess := getGinCtxSession(c)
+	sess := si.getGinCtxSession(c)
 	var preload *contactbook.PhonesPreload
 	if req.Preload != nil && req.Preload.Enabled {
 		var prim bool
@@ -390,7 +391,7 @@ func (si *serverMethods) GetContact(c *gin.Context, contactId int) {
 		UserID: sess.UserID,
 	}, preload, notes)
 	if err != nil {
-		respondGinTranslatedError(c, err, "GET_CONTACT")
+		si.respondGinTranslatedError(c, err, "GET_CONTACT")
 		return
 	}
 
@@ -401,14 +402,14 @@ func (si *serverMethods) GetContact(c *gin.Context, contactId int) {
 
 func (si *serverMethods) GetContacts(c *gin.Context) {
 	var req gen.GetContactsRequest
-	if err := bindGinParamsJSON(c, &req); err != nil {
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
 		return
 	}
-	sess := getGinCtxSession(c)
+	sess := si.getGinCtxSession(c)
 
 	conts, err := si.server.opts.Opts.ContactbookService.GetContacts(c, sess.UserID, *parseSelector(req.Selector))
 	if err != nil {
-		respondGinTranslatedError(c, err, "GET_CONTACTS")
+		si.respondGinTranslatedError(c, err, "GET_CONTACTS")
 		return
 	}
 

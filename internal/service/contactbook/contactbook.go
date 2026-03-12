@@ -2,7 +2,6 @@ package contactbook
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -79,34 +78,6 @@ func (pi PhoneInfo) validate() error {
 	return nil
 }
 
-type PhoneInfos []PhoneInfo
-
-func (pi PhoneInfos) validate() error {
-	primary := 0
-	if len(pi) == 0 {
-		return service.ErrMinimumOnePrimaryRequired
-	}
-	if len(pi) > 10 {
-		return service.ErrMaxPhonesCountExceeded
-	}
-	for _, v := range pi {
-		if err := v.validate(); err != nil {
-			return err
-		}
-		if v.Primary {
-			primary++
-			if primary > 1 {
-				return service.ErrMoreThanOnePrimaryPhone
-			}
-		}
-	}
-	if primary == 0 {
-		return service.ErrMinimumOnePrimaryRequired
-	}
-
-	return nil
-}
-
 type PhoneID struct {
 	ID        uint
 	ContactID uint
@@ -153,15 +124,15 @@ func (s *Service) wrapErr(err error) error {
 	return fmt.Errorf("contactbookService: %w", err)
 }
 
-func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo, phones PhoneInfos) (*Contact, []Phone, error) {
-	if err := phones.validate(); err != nil {
-		return nil, nil, s.wrapErr(fmt.Errorf("unable to validate phones: %w", err))
-	}
+func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo, phones []PhoneInfo) (*Contact, []Phone, error) {
 	if err := contact.validate(timeNow()); err != nil {
 		return nil, nil, s.wrapErr(fmt.Errorf("unable to validate contact: %w", err))
 	}
 	repophones := make([]storage.Phone, len(phones))
 	for i := range phones {
+		if err := phones[i].validate(); err != nil {
+			return nil, nil, s.wrapErr(fmt.Errorf("unable to validate phone: %w", err))
+		}
 		repophones[i] = storage.Phone{
 			Phone:   phones[i].Phone,
 			Primary: phones[i].Primary,
@@ -176,8 +147,14 @@ func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo,
 			Note:     contact.Note,
 		},
 		InitialPhones: repophones,
+		PhoneConstraints: storage.PhoneConstraints{
+			MaxAllowed: 10,
+			MaxPrimaries: 1,
+			MinPrimaries: 1,
+		},
 	})
 	if err != nil {
+		err = service.TranslateStorageError(err)
 		return nil, nil, s.wrapErr(fmt.Errorf("failed to create new contact for user %d: %w", uid, err))
 	}
 
@@ -207,10 +184,7 @@ func (s *Service) GetContact(ctx context.Context, id ContactID, preload *PhonesP
 		WithNote: notes,
 	})
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			err = service.ErrContactNotFound
-		}
-
+		err = service.TranslateStorageError(err)
 		return nil, nil, s.wrapErr(fmt.Errorf("failed to get contact %d (user %d): %w", id.ID, id.UserID, err))
 	}
 
@@ -244,6 +218,7 @@ func (s *Service) GetContacts(ctx context.Context, uid uint, selector Selector) 
 		},
 	})
 	if err != nil {
+		err = service.TranslateStorageError(err)
 		return nil, s.wrapErr(fmt.Errorf("failed to get contacts for user %d: %w", uid, err))
 	}
 
@@ -265,10 +240,7 @@ func (s *Service) DeleteContact(ctx context.Context, contact ContactID) error {
 		UserID: contact.UserID,
 	})
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			err = service.ErrContactNotFound
-		}
-
+		err = service.TranslateStorageError(err)
 		return s.wrapErr(fmt.Errorf("failed to delete contact %d: %w", contact.ID, err))
 	}
 

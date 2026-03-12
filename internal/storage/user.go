@@ -4,6 +4,10 @@ import (
 	"context"
 )
 
+const (
+	UserField string = "user"
+)
+
 type UserPassword struct {
 	Hash string
 	Algo string

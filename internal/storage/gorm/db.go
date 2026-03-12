@@ -100,14 +100,18 @@ func (db *DB) Stop() error {
 	return nil
 }
 
-func (db *DB) translateError(err error) error {
+func (db *DB) translateError(err error, field string) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return storage.ErrNotFound
+		return storage.NotFoundError{
+			Field: field,
+		}
 	}
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return storage.ErrAlreadyExists
+		return storage.AlreadyExistsError{
+			Field: field,
+		}
 	}
-	return err
+	return fmt.Errorf("gormStorageProvider: unknown error for %q: %w", field, err)
 }
 
 //UserStorage
@@ -116,7 +120,7 @@ func (db *DB) AddUser(ctx context.Context, data storage.AddUserData) (*storage.U
 	user := &model.User{}
 	user.FromUser(data.User)
 	if tx := db.db.WithContext(ctx).Create(user); tx.Error != nil {
-		return nil, db.translateError(tx.Error)
+		return nil, db.translateError(tx.Error, storage.UserField)
 	}
 	return user.ToUser(), nil
 }
@@ -133,10 +137,12 @@ func (db *DB) GetUser(ctx context.Context, data storage.GetUserData) (*storage.U
 	} else if len(data.Login) > 0 {
 		qargs = []any{"login = ?", data.Login}
 	} else {
-		return nil, storage.ErrNotFound
+		return nil, storage.NotFoundError{
+			Field: storage.UserField,
+		}
 	}
 	if tx := db.db.WithContext(ctx).Select(selected).First(&user, qargs...); tx.Error != nil {
-		return nil, db.translateError(tx.Error)
+		return nil, db.translateError(tx.Error, storage.UserField)
 	}
 	return user.ToUser(), nil
 }
@@ -149,12 +155,31 @@ func (db *DB) AddContact(ctx context.Context, data storage.AddContactData) (*sto
 	var phones []storage.Phone
 	err := db.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if tx := tx.Create(contact); tx.Error != nil {
-			return tx.Error
+			return db.translateError(tx.Error, storage.ContactField)
 		}
 
+		if len(data.InitialPhones) > int(data.PhoneConstraints.MaxAllowed) {
+			return storage.MaxCountError{
+				Field: storage.PhoneConstraintAllField,
+			}
+		}
 		dbphones := make([]model.Phone, len(data.InitialPhones))
+		var primaries uint
 		for i := range dbphones {
 			dbphones[i].FromPhone(data.InitialPhones[i])
+			if dbphones[i].Primary {
+				primaries++
+				if primaries > data.PhoneConstraints.MaxPrimaries {
+					return storage.MaxCountError{
+						Field: storage.PhoneConstraintPrimaryField,
+					}
+				}
+			}
+		}
+		if primaries < data.PhoneConstraints.MinPrimaries {
+			return storage.MinCountError{
+				Field: storage.PhoneConstraintPrimaryField,
+			}
 		}
 		err := db.addPhonesBatch(tx, contact.UserID, contact.ID, false, dbphones)
 		if err != nil {
@@ -168,7 +193,7 @@ func (db *DB) AddContact(ctx context.Context, data storage.AddContactData) (*sto
 		return nil
 	})
 	if err != nil {
-		return nil, db.translateError(err)
+		return nil, err
 	}
 	card := contact.ToContact()
 	card.Phones = phones
@@ -211,7 +236,7 @@ func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]
 		Column: clause.Column{Table: clause.CurrentTable, Name: clause.PrimaryKey},
 	})
 	if tx = tx.Find(&cards); tx.Error != nil {
-		return nil, db.translateError(tx.Error)
+		return nil, db.translateError(tx.Error, storage.ContactField)
 	}
 	var stcards = make([]storage.Contact, len(cards))
 	for i := 0; i < len(cards); i++ {
@@ -241,7 +266,9 @@ func (db *DB) GetContact(ctx context.Context, data storage.GetContactData) (*sto
 		return nil, err
 	}
 	if len(contacts) == 0 {
-		return nil, storage.ErrNotFound
+		return nil, storage.NotFoundError{
+			Field: storage.ContactField,
+		}
 	}
 
 	return &contacts[0], nil
@@ -252,11 +279,13 @@ func (db *DB) DeleteContact(ctx context.Context, data storage.DeleteContactData)
 		Where(&model.Contact{UserID: data.UserID}).
 		Delete(&model.Contact{}, data.ID)
 	if tx.Error != nil {
-		return db.translateError(tx.Error)
+		return db.translateError(tx.Error, storage.ContactField)
 	}
 	//soft-delete case
 	if tx.RowsAffected == 0 {
-		return storage.ErrNotFound
+		return storage.NotFoundError{
+			Field: storage.ContactField,
+		}
 	}
 
 	return nil
@@ -277,7 +306,7 @@ func (db *DB) addPhonesBatch(tx *gorm.DB, uid uint, cid uint, check bool, phones
 			Take(&dummy).Error
 
 		if err != nil {
-			return db.translateError(err)
+			return db.translateError(err, storage.ContactField)
 		}
 	}
 
@@ -285,5 +314,9 @@ func (db *DB) addPhonesBatch(tx *gorm.DB, uid uint, cid uint, check bool, phones
 		phones[i].ContactID = cid
 	}
 
-	return db.translateError(tx.Create(&phones).Error)
+	err := tx.Create(&phones).Error
+	if err != nil {
+		return db.translateError(err, storage.PhoneField)
+	}
+	return nil
 }

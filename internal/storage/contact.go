@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	ContactField string = "contact"
+)
+
 type Contact struct {
 	ID     uint
 	UserID uint
@@ -21,7 +25,8 @@ type AddContactData struct {
 	//ID will be overwritten
 	Contact Contact
 	//ID, ContactID will be overwritten
-	InitialPhones []Phone
+	InitialPhones    []Phone
+	PhoneConstraints PhoneConstraints
 }
 
 type ContactPhonesPreload struct {
