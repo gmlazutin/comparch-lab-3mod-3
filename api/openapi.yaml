@@ -23,6 +23,14 @@ components:
         - step
         - error
 
+    AuthObject:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+
     SelectorObject:
       type: object
       properties:
@@ -108,8 +116,29 @@ components:
     AuthResponse:
       type: object
       properties:
-        token:
+        auth:
+          $ref: '#/components/schemas/AuthObject'
+      required:
+        - auth
+
+    RegisterRequest:
+      type: object
+      properties:
+        login:
           type: string
+        password:
+          type: string
+      required:
+        - login
+        - password
+
+    RegisterResponse:
+      type: object
+      properties:
+        auth:
+          $ref: '#/components/schemas/AuthObject'
+      required:
+        - auth
 
     GetContactsRequest:
       type: object
@@ -173,7 +202,7 @@ components:
       type: object
 
 paths:
-  /api/v1/auth:
+  /v1/auth:
     post:
       summary: User authentication
       requestBody:
@@ -207,8 +236,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorObject'
-
-  /api/v1/contacts:
+  /v1/auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+  /v1/contacts:
     post:
       summary: Retrieve a list of contacts
       security:
@@ -245,7 +307,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorObject'
 
-  /api/v1/contact:
+  /v1/contact:
     post:
       summary: Add a new contact
       security:
@@ -282,7 +344,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorObject'
 
-  /api/v1/contact/{contact_id}:
+  /v1/contact/{contact_id}:
     post:
       summary: Retrieve a contact
       security:
