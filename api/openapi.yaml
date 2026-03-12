@@ -39,9 +39,8 @@ components:
           minimum: 0
         limit:
           type: integer
-          minimum: 0
+          minimum: 1
       required:
-        - offset
         - limit
 
     PreloadObject:
