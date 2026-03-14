@@ -61,6 +61,10 @@ func NewAPIServer(options Options) (*APIServer, error) {
 	}
 	options.Opts.Logger = options.Opts.Logger.With(logging.Service("ginApiServer"))
 
+	if len(options.Opts.Addr) == 0 {
+		options.Opts.Addr = ":8080"
+	}
+
 	r := gin.New()
 
 	var httpFS http.FileSystem
@@ -78,17 +82,19 @@ func NewAPIServer(options Options) (*APIServer, error) {
 
 	r.NoRoute(srv.noRouteFunc)
 
-	corsconfig := cors.Config{
-		AllowOrigins:     []string{options.PublicUrl},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-	}
-	if err := corsconfig.Validate(); err != nil {
-		return nil, fmt.Errorf("ginApiServer: cors config validation fail: %w", err)
-	}
+	if len(options.PublicUrl) > 0 {
+		corsconfig := cors.Config{
+			AllowOrigins:     []string{options.PublicUrl},
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+			AllowHeaders:     []string{"Authorization", "Content-Type"},
+			AllowCredentials: true,
+		}
+		if err := corsconfig.Validate(); err != nil {
+			return nil, fmt.Errorf("ginApiServer: cors config validation fail: %w", err)
+		}
 
-	r.Use(cors.New(corsconfig))
+		r.Use(cors.New(corsconfig))
+	}
 
 	if options.Opts.Logger.Enabled(nil, slog.LevelDebug) {
 		r.Use(srv.slogLogger)
@@ -121,7 +127,7 @@ func NewAPIServer(options Options) (*APIServer, error) {
 		assets, err := fs.Sub(options.StaticFS, "assets")
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, fmt.Errorf("unable to serve static assets: %s", err.Error())
+				return nil, fmt.Errorf("ginApiServer: unable to serve static assets: %s", err.Error())
 			}
 		} else {
 			r.StaticFS("/assets", http.FS(assets))
@@ -129,6 +135,10 @@ func NewAPIServer(options Options) (*APIServer, error) {
 	}
 
 	return srv, nil
+}
+
+func (s *APIServer) Addr() string {
+	return s.http.Addr
 }
 
 func (s *APIServer) Start() error {

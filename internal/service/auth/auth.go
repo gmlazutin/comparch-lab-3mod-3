@@ -36,7 +36,7 @@ type Service struct {
 var timeNow = time.Now
 
 func New(options Options) *Service {
-	if options.SessionExpireTimeout == 0 {
+	if options.SessionExpireTimeout <= 0 {
 		options.SessionExpireTimeout = time.Hour
 	}
 	if options.ServiceOpts.Logger == nil {

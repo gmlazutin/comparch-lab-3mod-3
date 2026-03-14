@@ -32,11 +32,7 @@ func getLogLvl() slog.Leveler {
 }
 
 func getAddr() string {
-	addr := os.Getenv("APP_LISTEN_ADDR")
-	if len(addr) == 0 {
-		addr = ":8080"
-	}
-	return addr
+	return os.Getenv("APP_LISTEN_ADDR")
 }
 
 func getDB() (string, string) {
@@ -50,6 +46,14 @@ func getJWTSecret() []byte {
 func getPublicUrl() string {
 	origin := os.Getenv("APP_PUBLIC_URL")
 	return origin
+}
+
+func getSessionExp() time.Duration {
+	tm, err := strconv.Atoi(os.Getenv("APP_SESSION_EXPIRE_TIMEOUT"))
+	if err != nil {
+		return 0
+	}
+	return time.Duration(tm) * time.Minute
 }
 
 func main() {
@@ -104,7 +108,7 @@ func main() {
 		Storage:                   gormdb,
 		ServiceOpts:               sopts,
 		SessionValidatorGenerator: session.NewJWTSessionProvider(getJWTSecret()),
-		SessionExpireTimeout:      time.Minute * 10,
+		SessionExpireTimeout:      getSessionExp(),
 	})
 
 	cbservice := contactbook.New(contactbook.Options{
@@ -128,7 +132,7 @@ func main() {
 		return
 	}
 
-	logger.Info("Running web server...", slog.String("addr", getAddr()))
+	logger.Info("Running web server...", slog.String("addr", srv.Addr()))
 
 	errCh := make(chan error, 1)
 	go func() {
