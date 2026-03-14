@@ -3,13 +3,15 @@
 package front
 
 import (
-	"embed"
 	"io/fs"
+
+	"github.com/gmlazutin/comparch-lab-3mod-3/web"
 )
 
-//go:embed ../../web/dist/**
-var distFS embed.FS
-
-func GetFS() fs.FS {
-	return distFS
+func FS() fs.FS {
+	FS, err := fs.Sub(web.FS, "dist")
+	if err != nil {
+		panic("front: embedding enabled, however, \"dist\" path can not be reached: " + err.Error())
+	}
+	return FS
 }

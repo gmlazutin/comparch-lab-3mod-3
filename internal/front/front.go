@@ -4,6 +4,6 @@ package front
 
 import "io/fs"
 
-func GetFS() fs.FS {
+func FS() fs.FS {
 	return nil
 }

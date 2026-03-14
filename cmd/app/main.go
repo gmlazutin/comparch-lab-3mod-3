@@ -121,7 +121,7 @@ func main() {
 			Addr:               getAddr(),
 		},
 		PublicUrl: getPublicUrl(),
-		StaticFS:  front.GetFS(),
+		StaticFS:  front.FS(),
 	})
 	if err != nil {
 		logger.Error("failed to create GIN api server", logging.Error(err))
