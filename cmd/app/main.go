@@ -12,6 +12,7 @@ import (
 
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api/gin"
+	"github.com/gmlazutin/comparch-lab-3mod-3/internal/front"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/service/auth"
@@ -59,7 +60,7 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	
+
 	db, dsn := getDB()
 	gormdb, err := gorm.New(gorm.Options{
 		Driver: db,
@@ -118,8 +119,9 @@ func main() {
 			ContactbookService: cbservice,
 			Logger:             logger,
 			Addr:               getAddr(),
-			PublicUrl:          getPublicUrl(),
 		},
+		PublicUrl: getPublicUrl(),
+		StaticFS:  front.GetFS(),
 	})
 	if err != nil {
 		logger.Error("failed to create GIN api server", logging.Error(err))

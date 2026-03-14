@@ -12,5 +12,4 @@ type APIServerOptions struct {
 	ContactbookService *contactbook.Service
 	Logger             *slog.Logger
 	Addr               string
-	PublicUrl          string
 }

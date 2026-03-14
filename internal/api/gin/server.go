@@ -6,8 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api"
@@ -33,12 +35,16 @@ const (
 )
 
 type Options struct {
-	Opts api.APIServerOptions
+	Opts      api.APIServerOptions
+	PublicUrl string
+	StaticFS  fs.FS
 }
 
 type APIServer struct {
 	opts Options
 	http *http.Server
+
+	httpFS http.FileSystem
 }
 
 // implements ServerInterface
@@ -57,16 +63,23 @@ func NewAPIServer(options Options) (*APIServer, error) {
 
 	r := gin.New()
 
+	var httpFS http.FileSystem
+	if options.StaticFS != nil {
+		httpFS = http.FS(options.StaticFS)
+	}
 	srv := &APIServer{
 		opts: options,
 		http: &http.Server{
 			Addr:    options.Opts.Addr,
 			Handler: r,
 		},
+		httpFS: httpFS,
 	}
 
+	r.NoRoute(srv.noRouteFunc)
+
 	corsconfig := cors.Config{
-		AllowOrigins:     []string{options.Opts.PublicUrl},
+		AllowOrigins:     []string{options.PublicUrl},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
@@ -103,6 +116,18 @@ func NewAPIServer(options Options) (*APIServer, error) {
 		},
 	})
 
+	//for static mode
+	if httpFS != nil {
+		assets, err := fs.Sub(options.StaticFS, "assets")
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, fmt.Errorf("unable to serve static assets: %s", err.Error())
+			}
+		} else {
+			r.StaticFS("/assets", http.FS(assets))
+		}
+	}
+
 	return srv, nil
 }
 
@@ -133,6 +158,22 @@ func (s *APIServer) slogLogger(c *gin.Context) {
 		slog.Duration("latency", latency),
 		slog.String("client_ip", c.ClientIP()),
 	)
+}
+
+func (s *APIServer) noRouteFunc(c *gin.Context) {
+	if s.httpFS == nil || (s.httpFS != nil && strings.HasPrefix(c.Request.URL.Path, "/api")) {
+		return
+	}
+
+	f, err := s.httpFS.Open("index.html")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "index.html not found")
+		return
+	}
+	defer f.Close()
+
+	stat, _ := f.Stat()
+	http.ServeContent(c.Writer, c.Request, "index.html", stat.ModTime(), f)
 }
 
 func (s *APIServer) authFunc(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
