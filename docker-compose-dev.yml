@@ -48,7 +48,9 @@ services:
     container_name: my_pgadmin
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - '8081:3000'
+    environment:
+      - PGADMIN_LISTEN_PORT=3000
     env_file:
       - .env
     networks:
