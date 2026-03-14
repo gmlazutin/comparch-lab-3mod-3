@@ -200,6 +200,8 @@ func (s *Service) GetContact(ctx context.Context, id ContactID, preload *PhonesP
 }
 
 func (s *Service) GetContacts(ctx context.Context, uid uint, selector Selector) ([]ContactWithPhones, error) {
+	//todo: return total contacts count for client-side pagination
+	
 	if err := selector.validate(); err != nil {
 		return nil, s.wrapErr(fmt.Errorf("unable to validate selector: %w", err))
 	}

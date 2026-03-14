@@ -18,10 +18,10 @@ const ContactsPage: React.FC = () => {
     const [contacts, setContacts] = useState<TableContact[]>([]);
     const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [contactsEnd, setContactsEnd] = useState(true);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
-    //const [totalContacts, setTotalContacts] = useState(0);
+    const itemsPerPage = 5;
 
     const loadPage = async (page: number) => {
         const offset = (page - 1) * itemsPerPage;
@@ -29,12 +29,18 @@ const ContactsPage: React.FC = () => {
             DefaultService.getContacts({
                 selector: {
                     offset: offset,
-                    limit: itemsPerPage
+                    limit: itemsPerPage+1
                 }
             })
         );
         if (!contacts.ok) {
             return;
+        }
+        if (contacts.data.contacts.length > itemsPerPage) {
+            setContactsEnd(false);
+            contacts.data.contacts = contacts.data.contacts.slice(0,-1);
+        }else{
+            setContactsEnd(true);
         }
         setContacts(contacts.data.contacts.map(c => ({
             id: c.id,
@@ -42,7 +48,6 @@ const ContactsPage: React.FC = () => {
             birthday: c.birthday,
             primaryPhone: c.phones?.[0]?.phone ?? "UNKNOWN"
         })));
-        //setTotalContacts(total);
     };
 
     useEffect(() => { loadPage(currentPage); }, [currentPage]);
@@ -60,8 +65,6 @@ const ContactsPage: React.FC = () => {
     const handleLogout = () => {
         setSession(null);
     };
-
-    //const totalPages = Math.ceil(totalContacts / itemsPerPage);
 
     return (
         <div className="container mt-5">
@@ -98,8 +101,7 @@ const ContactsPage: React.FC = () => {
 
             <div className="d-flex justify-content-between align-items-center">
                 <button className="btn btn-outline-primary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</button>
-                {/*<span>Page {currentPage} of {totalPages}</span> disabled={currentPage === totalPages}*/}
-                <button className="btn btn-outline-primary" onClick={() => setCurrentPage(p => p + 1)}>Next</button>
+                <button className="btn btn-outline-primary" disabled={contactsEnd} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
             </div>
 
             {selectedContactId && <ContactDetailsModal contactId={selectedContactId} onClose={() => setSelectedContactId(null)} />}
