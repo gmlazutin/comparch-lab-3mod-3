@@ -252,7 +252,7 @@ func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]
 	if data.Data.Preload.Enabled {
 		var prargs []any
 		if data.Data.Preload.PrimaryOnly {
-			prargs = []any{"`primary` = ?", true}
+			prargs = []any{"\"primary\" = ?", true}
 		}
 		tx = tx.Preload("Phones", prargs...)
 	}
