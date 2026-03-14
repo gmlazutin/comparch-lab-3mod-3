@@ -54,6 +54,12 @@ func getPublicUrl() string {
 func main() {
 	logger := logging.InitLogger(getLogLvl())
 
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	
 	db, dsn := getDB()
 	gormdb, err := gorm.New(gorm.Options{
 		Driver: db,
@@ -68,16 +74,10 @@ func main() {
 	}
 	defer gormdb.Stop()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	if err := gormdb.PerfomMigrations(ctx); err != nil {
 		logger.Error("failed to perform GORM migrations", logging.Error(err))
 		return
 	}
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
 
 	wg.Add(1)
 	go func() {
@@ -123,6 +123,7 @@ func main() {
 	})
 	if err != nil {
 		logger.Error("failed to create GIN api server", logging.Error(err))
+		return
 	}
 
 	logger.Info("Running web server...", slog.String("addr", getAddr()))

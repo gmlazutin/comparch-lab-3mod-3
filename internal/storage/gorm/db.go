@@ -92,11 +92,8 @@ func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
 				Delete(v)
 
 			if res.Error != nil {
-				if errors.Is(res.Error, context.Canceled) {
-					return res.Error
-				}
 				db.opts.Opts.Logger.Error("db flush error", logging.Error(res.Error), slog.String("model", fmt.Sprintf("%T", v)))
-				break
+				return res.Error
 			}
 
 			if res.RowsAffected == 0 {
