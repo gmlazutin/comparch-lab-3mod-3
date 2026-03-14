@@ -17,9 +17,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-//todo: rewrite to pure pgsql driver for better perfomance
-//and to avoid dirty GORM sql hacks.
-
 // implements ContactStorage, NumberStorage, UserStorage
 type DB struct {
 	db   *gorm.DB
@@ -254,7 +251,6 @@ func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]
 	tx := db.db.WithContext(ctx)
 	if data.Data.Preload.Enabled {
 		var prargs []any
-		//todo: unoptimized query, consider JOIN instead of Preload
 		if data.Data.Preload.PrimaryOnly {
 			prargs = []any{"`primary` = ?", true}
 		}
