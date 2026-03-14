@@ -56,6 +56,14 @@ func getSessionExp() time.Duration {
 	return time.Duration(tm) * time.Minute
 }
 
+func getDBExp() time.Duration {
+	tm, err := strconv.Atoi(os.Getenv("APP_DB_FLUSH_INTERVAL"))
+	if err != nil {
+		return time.Minute * 10
+	}
+	return time.Duration(tm) * time.Minute
+}
+
 func main() {
 	logger := logging.InitLogger(getLogLvl())
 
@@ -93,7 +101,7 @@ func main() {
 				return
 			}
 			select {
-			case <-time.After(time.Minute * 10):
+			case <-time.After(getDBExp()):
 				continue
 			case <-ctx.Done():
 				return
