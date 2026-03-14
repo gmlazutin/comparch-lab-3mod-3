@@ -1,0 +1,75 @@
+services:
+  app-db:
+    image: postgres:17.6
+    container_name: 'app-db'
+    hostname: app-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=UTC
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 3s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '10'
+
+  app:
+    build: .
+    image: app:latest
+    container_name: 'app'
+    restart: unless-stopped
+    ports:
+      - '80:8080'
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      app-db:
+        condition: service_healthy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '10'
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: my_pgadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      app-db:
+        condition: service_healthy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '10'
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
+    external: false
+
+volumes:
+  app-db-data:
+    driver: local
+    external: false
+    name: app-db-data
