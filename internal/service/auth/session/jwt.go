@@ -12,7 +12,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// implements AuthTokenValidatorGenerator
+var _ AuthTokenValidatorGenerator = (*JWTSessionProvider)(nil)
+
 type JWTSessionProvider struct {
 	secret []byte
 }

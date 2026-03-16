@@ -17,7 +17,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// implements ContactStorage, NumberStorage, UserStorage
+var _ storage.UserStorage = (*DB)(nil)
+var _ storage.ContactStorage = (*DB)(nil)
+var _ storage.PhoneStorage = (*DB)(nil)
+
 type DB struct {
 	db   *gorm.DB
 	opts Options

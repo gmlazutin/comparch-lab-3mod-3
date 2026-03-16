@@ -11,7 +11,8 @@ import (
 	oapitypes "github.com/oapi-codegen/runtime/types"
 )
 
-// implements ServerInterface
+var _ gen.ServerInterface = (*serverMethods)(nil)
+
 type serverMethods struct {
 	server *APIServer
 }
