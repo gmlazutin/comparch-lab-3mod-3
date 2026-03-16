@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/logging"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/storage"
@@ -41,14 +42,26 @@ func New(opts Options) (*DB, error) {
 		opts.Opts.Logger = logging.EmptyLogger()
 	}
 
+	gdb := &DB{}
+
 	var dialector gorm.Dialector
 	switch opts.Driver {
 	case "pgsql":
 		dialector = postgres.Open(opts.Dsn)
 	case "sqlite":
-		dialector = sqlite.Open(opts.Dsn)
+		//enforce foreign keys support for DSN as it is
+		//not enabled by default on sqlite
+		u, err := url.Parse(opts.Dsn)
+		if err != nil {
+			return nil, gdb.wrapErr(fmt.Errorf("unable to parse sqlite DSN: %w", err))
+		}
+		q := u.Query()
+		q.Set("_foreign_keys", "on")
+		u.RawQuery = q.Encode()
+
+		dialector = sqlite.Open(u.String())
 	default:
-		return nil, fmt.Errorf("gormStorageProvider: unknown db driver: %s", opts.Driver)
+		return nil, gdb.wrapErr(fmt.Errorf("unknown db driver: %s", opts.Driver))
 	}
 
 	opts.Opts.Logger = opts.Opts.Logger.With(logging.Service("gormStorageProvider"))
@@ -67,13 +80,16 @@ func New(opts Options) (*DB, error) {
 		Logger:         log,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gormStorageProvider: failed to establish db conn: %w", err)
+		return nil, gdb.wrapErr(fmt.Errorf("failed to establish db conn: %w", err))
 	}
+	gdb.db = db
+	gdb.opts = opts
 
-	return &DB{
-		db:   db,
-		opts: opts,
-	}, nil
+	return gdb, nil
+}
+
+func (db *DB) wrapErr(err error) error {
+	return fmt.Errorf("gormStorageProvider: %w", err)
 }
 
 func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
@@ -93,7 +109,7 @@ func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
 
 			if res.Error != nil {
 				db.opts.Opts.Logger.Error("db flush error", logging.Error(res.Error), slog.String("model", fmt.Sprintf("%T", v)))
-				return res.Error
+				return db.wrapErr(res.Error)
 			}
 
 			if res.RowsAffected == 0 {
@@ -110,14 +126,15 @@ func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
 
 func (db *DB) PerfomMigrations(ctx context.Context) error {
 	tx := db.db.WithContext(ctx)
+	errtext := "unable to perform migrations on table %T: %w"
 	if err := tx.AutoMigrate(&model.Phone{}); err != nil {
-		return err
+		return db.wrapErr(fmt.Errorf(errtext, &model.Phone{}, err))
 	}
 	if err := tx.AutoMigrate(&model.Contact{}); err != nil {
-		return err
+		return db.wrapErr(fmt.Errorf(errtext, &model.Contact{}, err))
 	}
 	if err := tx.AutoMigrate(&model.User{}); err != nil {
-		return err
+		return db.wrapErr(fmt.Errorf(errtext, &model.User{}, err))
 	}
 
 	return nil
@@ -126,11 +143,11 @@ func (db *DB) PerfomMigrations(ctx context.Context) error {
 func (db *DB) Stop() error {
 	sqldb, err := db.db.DB()
 	if err != nil {
-		return fmt.Errorf("gormStorageProvider: failed to get sqldb instance: %w", err)
+		return db.wrapErr(fmt.Errorf("failed to get sqldb instance: %w", err))
 	}
 	err = sqldb.Close()
 	if err != nil {
-		return fmt.Errorf("gormStorageProvider: failed to close sqldb: %w", err)
+		return db.wrapErr(fmt.Errorf("failed to close sqldb: %w", err))
 	}
 
 	return nil
@@ -147,7 +164,7 @@ func (db *DB) translateError(err error, field string) error {
 			Field: field,
 		}
 	}
-	return fmt.Errorf("gormStorageProvider: unknown error for %q: %w", field, err)
+	return fmt.Errorf("unknown error for %q: %w", field, err)
 }
 
 //UserStorage
@@ -156,7 +173,7 @@ func (db *DB) AddUser(ctx context.Context, data storage.AddUserData) (*storage.U
 	user := &model.User{}
 	user.FromUser(data.User)
 	if tx := db.db.WithContext(ctx).Create(user); tx.Error != nil {
-		return nil, db.translateError(tx.Error, storage.UserField)
+		return nil, db.wrapErr(db.translateError(tx.Error, storage.UserField))
 	}
 	return user.ToUser(), nil
 }
@@ -173,12 +190,12 @@ func (db *DB) GetUser(ctx context.Context, data storage.GetUserData) (*storage.U
 	} else if len(data.Login) > 0 {
 		qargs = []any{"login = ?", data.Login}
 	} else {
-		return nil, storage.NotFoundError{
+		return nil, db.wrapErr(storage.NotFoundError{
 			Field: storage.UserField,
-		}
+		})
 	}
 	if tx := db.db.WithContext(ctx).Select(selected).First(&user, qargs...); tx.Error != nil {
-		return nil, db.translateError(tx.Error, storage.UserField)
+		return nil, db.wrapErr(db.translateError(tx.Error, storage.UserField))
 	}
 	return user.ToUser(), nil
 }
@@ -229,7 +246,7 @@ func (db *DB) AddContact(ctx context.Context, data storage.AddContactData) (*sto
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, db.wrapErr(err)
 	}
 	card := contact.ToContact()
 	card.Phones = phones
@@ -286,7 +303,12 @@ func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]
 
 func (db *DB) GetContacts(ctx context.Context, data storage.GetContactsData) ([]storage.Contact, error) {
 	data.Data.ID = 0
-	return db.getContacts(ctx, data)
+	conts, err := db.getContacts(ctx, data)
+	if err != nil {
+		return nil, db.wrapErr(err)
+	}
+
+	return conts, nil
 }
 
 func (db *DB) GetContact(ctx context.Context, data storage.GetContactData) (*storage.Contact, error) {
@@ -298,12 +320,12 @@ func (db *DB) GetContact(ctx context.Context, data storage.GetContactData) (*sto
 		Data: data,
 	})
 	if err != nil {
-		return nil, err
+		return nil, db.wrapErr(err)
 	}
 	if len(contacts) == 0 {
-		return nil, storage.NotFoundError{
+		return nil, db.wrapErr(storage.NotFoundError{
 			Field: storage.ContactField,
-		}
+		})
 	}
 
 	return &contacts[0], nil
@@ -314,13 +336,13 @@ func (db *DB) DeleteContact(ctx context.Context, data storage.DeleteContactData)
 		Where(&model.Contact{UserID: data.UserID}).
 		Delete(&model.Contact{}, data.ID)
 	if tx.Error != nil {
-		return db.translateError(tx.Error, storage.ContactField)
+		return db.wrapErr(db.translateError(tx.Error, storage.ContactField))
 	}
 	//soft-delete case
 	if tx.RowsAffected == 0 {
-		return storage.NotFoundError{
+		return db.wrapErr(storage.NotFoundError{
 			Field: storage.ContactField,
-		}
+		})
 	}
 
 	return nil
