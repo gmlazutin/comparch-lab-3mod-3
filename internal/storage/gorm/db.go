@@ -94,7 +94,8 @@ func (db *DB) wrapErr(err error) error {
 }
 
 func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
-	for _, v := range []any{&model.User{}, &model.Phone{}, &model.Contact{}} {
+	//the order is important for constraints!
+	for _, v := range []any{&model.Phone{}, &model.Contact{}, &model.User{}} {
 		var rowsTotal int64
 		for {
 			sub := db.db.WithContext(ctx).
@@ -127,17 +128,10 @@ func (db *DB) PerformFlush(ctx context.Context, batchSize int) error {
 
 func (db *DB) PerfomMigrations(ctx context.Context) error {
 	tx := db.db.WithContext(ctx)
-	errtext := "unable to perform migrations on table %T: %w"
-	if err := tx.AutoMigrate(&model.Phone{}); err != nil {
-		return db.wrapErr(fmt.Errorf(errtext, &model.Phone{}, err))
+	//the order is important for constraints!
+	if err := tx.AutoMigrate(&model.User{}, &model.Contact{}, &model.Phone{}); err != nil {
+		return db.wrapErr(fmt.Errorf("unable to perform migrations: %w", err))
 	}
-	if err := tx.AutoMigrate(&model.Contact{}); err != nil {
-		return db.wrapErr(fmt.Errorf(errtext, &model.Contact{}, err))
-	}
-	if err := tx.AutoMigrate(&model.User{}); err != nil {
-		return db.wrapErr(fmt.Errorf(errtext, &model.User{}, err))
-	}
-
 	return nil
 }
 
