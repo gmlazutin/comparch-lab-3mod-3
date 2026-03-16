@@ -1,10 +1,14 @@
 FROM node:20-alpine AS web-build
 WORKDIR /web
+COPY ./web/package.json ./web/package-lock.json ./
+RUN npm ci --silent
 COPY ./web ./
-RUN npm ci && npm run build
+RUN npm run build
 
 FROM golang:1.26-alpine AS build
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
 COPY --from=web-build /web/dist ./web/dist
 #constantly embed frontend for now
