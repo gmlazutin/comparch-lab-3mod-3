@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -35,6 +36,10 @@ func (p *JWTSessionProvider) wrapErr(err error) error {
 	return fmt.Errorf("jwtSessionProvider: %w", err)
 }
 
+func (p *JWTSessionProvider) invalidTknErr(err error) error {
+	return p.wrapErr(errors.Join(service.ErrInvalidToken, err))
+}
+
 func (p *JWTSessionProvider) Validate(ctx context.Context, token string, ts time.Time) (*Session, error) {
 	tkn, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -43,26 +48,24 @@ func (p *JWTSessionProvider) Validate(ctx context.Context, token string, ts time
 		return p.secret, nil
 	})
 	if err != nil {
-		return nil, p.wrapErr(fmt.Errorf("error while parsing token: %w", service.ErrInvalidToken))
+		return nil, p.invalidTknErr(fmt.Errorf("error while parsing token: %w", err))
 	}
 
 	if !tkn.Valid {
 		return nil, p.wrapErr(service.ErrInvalidToken)
 	}
 
-	//todo: clarify each error reason in fmt.Errorf before passing into wrapErr
-
 	claims, ok := tkn.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, p.wrapErr(service.ErrInvalidToken)
+		return nil, p.invalidTknErr(fmt.Errorf("unable to get claims"))
 	}
 	subFloat, ok := claims["sub"].(float64)
 	if !ok {
-		return nil, p.wrapErr(service.ErrInvalidToken)
+		return nil, p.invalidTknErr(fmt.Errorf("unable to get sub"))
 	}
 	expFloat, ok := claims["exp"].(float64)
 	if !ok {
-		return nil, p.wrapErr(service.ErrInvalidToken)
+		return nil, p.invalidTknErr(fmt.Errorf("unable to get exp"))
 	}
 
 	session := &Session{
@@ -71,7 +74,7 @@ func (p *JWTSessionProvider) Validate(ctx context.Context, token string, ts time
 	}
 
 	if ts.After(session.Expires) {
-		return nil, p.wrapErr(service.ErrInvalidToken)
+		return nil, p.invalidTknErr(fmt.Errorf("token has expired"))
 	}
 
 	return session, nil

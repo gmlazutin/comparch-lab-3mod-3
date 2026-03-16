@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -66,9 +67,15 @@ func (s *Service) checkPassword(usrpass storage.UserPassword, password string) e
 	switch usrpass.Algo {
 	case "bcrypt":
 		err := bcrypt.CompareHashAndPassword([]byte(usrpass.Hash), []byte(password))
-		return err
+		if err != nil {
+			if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+				return service.ErrIncorrectPassword
+			}
+			return fmt.Errorf("unable to check user password with %q: %w", usrpass.Algo, err)
+		}
+		return nil
 	default:
-		return service.ErrIncorrectPassword
+		return fmt.Errorf("unknown algo: %s", usrpass.Algo)
 	}
 }
 
@@ -109,8 +116,8 @@ func (s *Service) AuthUserByPassword(ctx context.Context, login, password string
 		return nil, "", s.wrapErr(fmt.Errorf("failed to authenticate user with login %q: %w", login, err))
 	}
 
-	if s.checkPassword(user.Password, password) != nil {
-		return nil, "", s.wrapErr(fmt.Errorf("failed to authenticate user %d: %w", user.ID, service.ErrIncorrectPassword))
+	if err := s.checkPassword(user.Password, password); err != nil {
+		return nil, "", s.wrapErr(fmt.Errorf("failed to authenticate user %d: %w", user.ID, err))
 	}
 	sess := &session.Session{
 		UserID:  user.ID,
