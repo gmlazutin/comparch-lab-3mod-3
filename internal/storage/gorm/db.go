@@ -56,7 +56,8 @@ func New(opts Options) (*DB, error) {
 			return nil, gdb.wrapErr(fmt.Errorf("unable to parse sqlite DSN: %w", err))
 		}
 		q := u.Query()
-		q.Set("_foreign_keys", "on")
+		//todo: seems it doesn't work anyway (issue #2)
+		q.Set("_foreign_keys", "ON")
 		u.RawQuery = q.Encode()
 
 		dialector = sqlite.Open(u.String())
@@ -285,7 +286,8 @@ func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]
 	where.ID = data.Data.ID
 	tx = tx.Where(where).Select(fields)
 	tx = tx.Order(clause.OrderByColumn{
-		Column: clause.Column{Table: clause.CurrentTable, Name: clause.PrimaryKey},
+		Column: clause.Column{Table: clause.CurrentTable, Name: "created_at"},
+		Desc:   true,
 	})
 	if tx = tx.Find(&cards); tx.Error != nil {
 		return nil, db.translateError(tx.Error, storage.ContactField)
