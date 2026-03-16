@@ -1,6 +1,10 @@
 *.db
 .env
 .git
+docker-compose*.yml
+docker-compose*.yaml
+README.md
+.gitignore
 
 logs
 *.log
@@ -10,6 +14,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+node_modules
 dist
 dist-ssr
 *.local
