@@ -53,10 +53,15 @@ type DeleteContactData struct {
 	UserID uint
 }
 
+type UpdateContactData struct {
+	//Empty fields will be ignored, Phones field will be ignored
+	Contact Contact
+}
+
 type ContactStorage interface {
 	AddContact(ctx context.Context, data AddContactData) (*Contact, error)
 	GetContact(ctx context.Context, data GetContactData) (*Contact, error)
 	GetContacts(ctx context.Context, data GetContactsData) ([]Contact, error)
-	//UpdateContact(ctx context.Context, uid uint, data UpdateContactData) (*Contact, error)
+	//UpdateContact(ctx context.Context, data UpdateContactData) (*Contact, error)
 	DeleteContact(ctx context.Context, data DeleteContactData) error
 }

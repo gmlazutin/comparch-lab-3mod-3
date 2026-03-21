@@ -46,7 +46,6 @@ type Contact struct {
 }
 
 func (c *Contact) FromContact(contact storage.Contact) {
-	c.UserID = contact.UserID
 	c.Name = contact.Name
 	c.Birthday = contact.Birthday
 	c.Note = contact.Note
@@ -71,7 +70,6 @@ type Phone struct {
 }
 
 func (p *Phone) FromPhone(phone storage.Phone) {
-	p.ContactID = phone.ContactID
 	p.Phone = phone.Phone
 	p.Primary = phone.Primary
 }

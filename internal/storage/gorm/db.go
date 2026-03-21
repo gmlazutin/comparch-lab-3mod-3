@@ -18,9 +18,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+type gormDBCtx int
+
+const (
+	transactCtxKey gormDBCtx = 1
+)
+
 var _ storage.UserStorage = (*DB)(nil)
 var _ storage.ContactStorage = (*DB)(nil)
 var _ storage.PhoneStorage = (*DB)(nil)
+var _ storage.Transact = (*DB)(nil)
 
 type DB struct {
 	db   *gorm.DB
@@ -162,12 +169,36 @@ func (db *DB) translateError(err error, field string) error {
 	return fmt.Errorf("unknown error for %q: %w", field, err)
 }
 
+//Transact
+
+func (db *DB) Transact(ctx context.Context, fc storage.TransactFunc) error {
+	//set there context for the whole transaction
+	err := db.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ctx := context.WithValue(ctx, transactCtxKey, tx)
+		err := fc(ctx)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("transact error: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) extractTxCtx(ctx context.Context) *gorm.DB {
+	if val := ctx.Value(transactCtxKey); val != nil {
+		//set there context for each query
+		return val.(*gorm.DB).WithContext(ctx)
+	}
+
+	return db.db.WithContext(ctx)
+}
+
 //UserStorage
 
 func (db *DB) AddUser(ctx context.Context, data storage.AddUserData) (*storage.User, error) {
 	user := &model.User{}
 	user.FromUser(data.User)
-	if tx := db.db.WithContext(ctx).Create(user); tx.Error != nil {
+	if tx := db.extractTxCtx(ctx).Create(user); tx.Error != nil {
 		return nil, db.wrapErr(db.translateError(tx.Error, storage.UserField))
 	}
 	return user.ToUser(), nil
@@ -189,7 +220,7 @@ func (db *DB) GetUser(ctx context.Context, data storage.GetUserData) (*storage.U
 			Field: storage.UserField,
 		})
 	}
-	if tx := db.db.WithContext(ctx).Select(selected).First(&user, qargs...); tx.Error != nil {
+	if tx := db.extractTxCtx(ctx).Select(selected).First(&user, qargs...); tx.Error != nil {
 		return nil, db.wrapErr(db.translateError(tx.Error, storage.UserField))
 	}
 	return user.ToUser(), nil
@@ -200,8 +231,9 @@ func (db *DB) GetUser(ctx context.Context, data storage.GetUserData) (*storage.U
 func (db *DB) AddContact(ctx context.Context, data storage.AddContactData) (*storage.Contact, error) {
 	contact := &model.Contact{}
 	contact.FromContact(data.Contact)
+	contact.UserID = data.Contact.UserID
 	var phones []storage.Phone
-	err := db.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := db.extractTxCtx(ctx).Transaction(func(tx *gorm.DB) error {
 		if tx := tx.Create(contact); tx.Error != nil {
 			return db.translateError(tx.Error, storage.ContactField)
 		}
@@ -263,7 +295,7 @@ func (db *DB) applySelectorRules(tx *gorm.DB, selector storage.Selector) *gorm.D
 
 func (db *DB) getContacts(ctx context.Context, data storage.GetContactsData) ([]storage.Contact, error) {
 	var cards []model.Contact
-	tx := db.db.WithContext(ctx)
+	tx := db.extractTxCtx(ctx)
 	if data.Data.Preload.Enabled {
 		var prargs []any
 		if data.Data.Preload.PrimaryOnly {
@@ -327,8 +359,24 @@ func (db *DB) GetContact(ctx context.Context, data storage.GetContactData) (*sto
 	return &contacts[0], nil
 }
 
-func (db *DB) DeleteContact(ctx context.Context, data storage.DeleteContactData) error {
+/*func (db *DB) UpdateContact(ctx context.Context, data storage.UpdateContactData) (*storage.Contact, error) {
+	upd := model.Contact{}
+	upd.FromContact(data.Contact)
+	where := &model.Contact{UserID: data.Contact.UserID}
+	where.ID = data.Contact.ID
+	var cont model.Contact
 	tx := db.db.WithContext(ctx).
+		Model(&cont).
+		Where(where).
+		Updates(upd)
+	if tx.Error != nil {
+		return nil, db.wrapErr(db.translateError(tx.Error, storage.ContactField))
+	}
+	return cont.ToContact(), nil
+}*/
+
+func (db *DB) DeleteContact(ctx context.Context, data storage.DeleteContactData) error {
+	tx := db.extractTxCtx(ctx).
 		Where(&model.Contact{UserID: data.UserID}).
 		Delete(&model.Contact{}, data.ID)
 	if tx.Error != nil {
