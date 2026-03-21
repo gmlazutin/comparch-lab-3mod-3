@@ -2,8 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { NonEmptyString } from './NonEmptyString';
 export type AddPhoneObject = {
-    phone: string;
+    phone: NonEmptyString;
     isPrimary?: boolean;
 };
 

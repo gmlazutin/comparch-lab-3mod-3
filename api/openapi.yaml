@@ -12,6 +12,12 @@ components:
       bearerFormat: JWT
 
   schemas:
+    NonEmptyString:
+      type: string
+      pattern: '^[^\s].*[^\s]$|^[^\s]$' 
+      minLength: 1
+      description: "This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client."
+
     ErrorObject:
       type: object
       properties:
@@ -95,7 +101,7 @@ components:
       type: object
       properties:
         phone:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         isPrimary:
           type: boolean
       required:
@@ -105,10 +111,11 @@ components:
       type: object
       properties:
         login:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         password:
           type: string
           format: password
+          minLength: 1
       required:
         - login
         - password
@@ -125,10 +132,11 @@ components:
       type: object
       properties:
         login:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         password:
           type: string
           format: password
+          minLength: 1
       required:
         - login
         - password
@@ -163,12 +171,12 @@ components:
       type: object
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         birthday:
           type: string
           format: date
         note:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         initialPhones:
           type: array
           items:
@@ -206,12 +214,12 @@ components:
       type: object
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         birthday:
           type: string
           format: date
         note:
-          type: string
+          $ref: '#/components/schemas/NonEmptyString'
         
     UpdateContactResponse:
       type: object
