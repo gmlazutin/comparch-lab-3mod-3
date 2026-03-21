@@ -6,6 +6,6 @@ import type { NonEmptyString } from './NonEmptyString';
 export type UpdateContactRequest = {
     name?: NonEmptyString;
     birthday?: string;
-    note?: NonEmptyString;
+    note?: string;
 };
 

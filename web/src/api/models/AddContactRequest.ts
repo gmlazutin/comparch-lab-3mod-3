@@ -7,7 +7,7 @@ import type { NonEmptyString } from './NonEmptyString';
 export type AddContactRequest = {
     name: NonEmptyString;
     birthday: string;
-    note?: NonEmptyString;
+    note?: string;
     initialPhones: Array<AddPhoneObject>;
 };
 
