@@ -75,7 +75,7 @@ func NewAPIServer(options Options) (*APIServer, error) {
 	if len(options.PublicUrl) > 0 {
 		corsconfig := cors.Config{
 			AllowOrigins:     []string{options.PublicUrl},
-			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+			AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE"},
 			AllowHeaders:     []string{"Authorization", "Content-Type"},
 			AllowCredentials: true,
 		}

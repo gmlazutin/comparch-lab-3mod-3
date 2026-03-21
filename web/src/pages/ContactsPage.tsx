@@ -104,7 +104,7 @@ const ContactsPage: React.FC = () => {
                 <button className="btn btn-outline-primary" disabled={contactsEnd} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
             </div>
 
-            {selectedContactId && <ContactDetailsModal contactId={selectedContactId} onClose={() => setSelectedContactId(null)} />}
+            {selectedContactId && <ContactDetailsModal contactId={selectedContactId} onClose={() => { setSelectedContactId(null); loadPage(currentPage); }} />}
             {showAddModal && <AddContactModal onClose={() => { setShowAddModal(false); loadPage(currentPage); }} />}
         </div>
     );
