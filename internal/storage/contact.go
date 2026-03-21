@@ -21,8 +21,9 @@ type Contact struct {
 	Phones []Phone
 }
 
+// todo: remove InitialPhones as PhoneStorage will be implemented
 type AddContactData struct {
-	//ID will be overwritten
+	//ID will be overwritten, Phones will be ignored
 	Contact Contact
 	//ID, ContactID will be overwritten
 	InitialPhones    []Phone
@@ -34,6 +35,7 @@ type ContactPhonesPreload struct {
 	PrimaryOnly bool
 }
 
+// todo: remove Preload as PhoneStorage will be implemented
 type GetContactData struct {
 	ID     uint
 	UserID uint
@@ -62,6 +64,6 @@ type ContactStorage interface {
 	AddContact(ctx context.Context, data AddContactData) (*Contact, error)
 	GetContact(ctx context.Context, data GetContactData) (*Contact, error)
 	GetContacts(ctx context.Context, data GetContactsData) ([]Contact, error)
-	//UpdateContact(ctx context.Context, data UpdateContactData) (*Contact, error)
+	UpdateContact(ctx context.Context, data UpdateContactData) error
 	DeleteContact(ctx context.Context, data DeleteContactData) error
 }

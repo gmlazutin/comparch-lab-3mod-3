@@ -2,6 +2,7 @@ package gin
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmlazutin/comparch-lab-3mod-3/internal/api/gin/gen"
@@ -237,4 +238,38 @@ func (si *serverMethods) GetContacts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (si *serverMethods) UpdateContact(c *gin.Context, contactId int) {
+	var req gen.UpdateContactRequest
+	if err := si.bindGinParamsJSON(c, &req); err != nil {
+		return
+	}
+	var name, note string
+	var bday time.Time
+	if req.Name != nil {
+		name = *req.Name
+	}
+	if req.Note != nil {
+		note = *req.Note
+	}
+	if req.Birthday != nil {
+		bday = req.Birthday.Time
+	}
+	sess := si.getGinCtxSession(c)
+	cont, err := si.server.opts.Opts.ContactbookService.UpdateContact(c, contactbook.ContactID{
+		ID:     uint(contactId),
+		UserID: sess.UserID,
+	}, contactbook.ContactInfo{
+		Name:     name,
+		Note:     note,
+		Birthday: bday,
+	})
+	if err != nil {
+		si.respondGinTranslatedError(c, err, "UPDATE_CONTACT")
+		return
+	}
+	c.JSON(http.StatusOK, gen.UpdateContactResponse{
+		Contact: *genContactResponse(*cont, nil),
+	})
 }

@@ -148,7 +148,7 @@ func (s *Service) AddContact(ctx context.Context, uid uint, contact ContactInfo,
 		},
 		InitialPhones: repophones,
 		PhoneConstraints: storage.PhoneConstraints{
-			MaxAllowed: 10,
+			MaxAllowed:   10,
 			MaxPrimaries: 1,
 			MinPrimaries: 1,
 		},
@@ -201,7 +201,7 @@ func (s *Service) GetContact(ctx context.Context, id ContactID, preload *PhonesP
 
 func (s *Service) GetContacts(ctx context.Context, uid uint, selector Selector) ([]ContactWithPhones, error) {
 	//todo: return total contacts count for client-side pagination
-	
+
 	if err := selector.validate(); err != nil {
 		return nil, s.wrapErr(fmt.Errorf("unable to validate selector: %w", err))
 	}
@@ -234,6 +234,44 @@ func (s *Service) GetContacts(ctx context.Context, uid uint, selector Selector) 
 	}
 
 	return servicecontacts, nil
+}
+
+func (s *Service) UpdateContact(ctx context.Context, id ContactID, contact ContactInfo) (*Contact, error) {
+	var cont *storage.Contact
+	err := s.opts.ServiceOpts.Transact.Transact(ctx, func(ctx context.Context) error {
+		err := s.opts.ContactStorage.UpdateContact(ctx, storage.UpdateContactData{
+			Contact: storage.Contact{
+				ID:       id.ID,
+				UserID:   id.UserID,
+				Name:     contact.Name,
+				Birthday: contact.Birthday,
+				Note:     contact.Note,
+			},
+		})
+		if err != nil {
+			err = service.TranslateStorageError(err)
+			return fmt.Errorf("failed to update contact %d: %w", id.ID, err)
+		}
+		cont, err = s.opts.ContactStorage.GetContact(ctx, storage.GetContactData{
+			ID:       id.ID,
+			UserID:   id.UserID,
+			WithNote: true,
+			Preload: storage.ContactPhonesPreload{
+				Enabled: false,
+			},
+		})
+		if err != nil {
+			err = service.TranslateStorageError(err)
+			return fmt.Errorf("failed to get contact %d after update: %w", id.ID, err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, s.wrapErr(err)
+	}
+	servicecontact := &Contact{}
+	servicecontact.fromStorage(*cont)
+	return servicecontact, nil
 }
 
 func (s *Service) DeleteContact(ctx context.Context, contact ContactID) error {

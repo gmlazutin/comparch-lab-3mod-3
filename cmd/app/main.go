@@ -110,7 +110,8 @@ func main() {
 	}()
 
 	sopts := service.ServiceOptions{
-		Logger: logger,
+		Logger:   logger,
+		Transact: gormdb,
 	}
 	aservice := auth.New(auth.Options{
 		Storage:                   gormdb,

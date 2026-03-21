@@ -179,7 +179,7 @@ func (db *DB) Transact(ctx context.Context, fc storage.TransactFunc) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("transact error: %w", err)
+		return err
 	}
 	return nil
 }
@@ -359,21 +359,21 @@ func (db *DB) GetContact(ctx context.Context, data storage.GetContactData) (*sto
 	return &contacts[0], nil
 }
 
-/*func (db *DB) UpdateContact(ctx context.Context, data storage.UpdateContactData) (*storage.Contact, error) {
+func (db *DB) UpdateContact(ctx context.Context, data storage.UpdateContactData) error {
 	upd := model.Contact{}
 	upd.FromContact(data.Contact)
 	where := &model.Contact{UserID: data.Contact.UserID}
 	where.ID = data.Contact.ID
 	var cont model.Contact
-	tx := db.db.WithContext(ctx).
+	tx := db.extractTxCtx(ctx).
 		Model(&cont).
 		Where(where).
 		Updates(upd)
 	if tx.Error != nil {
-		return nil, db.wrapErr(db.translateError(tx.Error, storage.ContactField))
+		return db.wrapErr(db.translateError(tx.Error, storage.ContactField))
 	}
-	return cont.ToContact(), nil
-}*/
+	return nil
+}
 
 func (db *DB) DeleteContact(ctx context.Context, data storage.DeleteContactData) error {
 	tx := db.extractTxCtx(ctx).

@@ -25,5 +25,7 @@ export type { PreloadObject } from './models/PreloadObject';
 export type { RegisterRequest } from './models/RegisterRequest';
 export type { RegisterResponse } from './models/RegisterResponse';
 export type { SelectorObject } from './models/SelectorObject';
+export type { UpdateContactRequest } from './models/UpdateContactRequest';
+export type { UpdateContactResponse } from './models/UpdateContactResponse';
 
 export { DefaultService } from './services/DefaultService';

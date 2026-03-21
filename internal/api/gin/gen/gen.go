@@ -129,6 +129,18 @@ type SelectorObject struct {
 	Offset *int `json:"offset,omitempty"`
 }
 
+// UpdateContactRequest defines model for UpdateContactRequest.
+type UpdateContactRequest struct {
+	Birthday *openapi_types.Date `json:"birthday,omitempty"`
+	Name     *string             `json:"name,omitempty"`
+	Note     *string             `json:"note,omitempty"`
+}
+
+// UpdateContactResponse defines model for UpdateContactResponse.
+type UpdateContactResponse struct {
+	Contact ContactObject `json:"contact"`
+}
+
 // AuthUserJSONRequestBody defines body for AuthUser for application/json ContentType.
 type AuthUserJSONRequestBody = AuthRequest
 
@@ -137,6 +149,9 @@ type RegisterUserJSONRequestBody = RegisterRequest
 
 // AddContactJSONRequestBody defines body for AddContact for application/json ContentType.
 type AddContactJSONRequestBody = AddContactRequest
+
+// UpdateContactJSONRequestBody defines body for UpdateContact for application/json ContentType.
+type UpdateContactJSONRequestBody = UpdateContactRequest
 
 // GetContactJSONRequestBody defines body for GetContact for application/json ContentType.
 type GetContactJSONRequestBody = GetContactRequest
@@ -158,6 +173,9 @@ type ServerInterface interface {
 	// Delete a contact
 	// (DELETE /api/v1/contact/{contact_id})
 	DeleteContact(c *gin.Context, contactId int)
+	// Update a contact
+	// (PATCH /api/v1/contact/{contact_id})
+	UpdateContact(c *gin.Context, contactId int)
 	// Retrieve a contact
 	// (POST /api/v1/contact/{contact_id})
 	GetContact(c *gin.Context, contactId int)
@@ -242,6 +260,32 @@ func (siw *ServerInterfaceWrapper) DeleteContact(c *gin.Context) {
 	siw.Handler.DeleteContact(c, contactId)
 }
 
+// UpdateContact operation middleware
+func (siw *ServerInterfaceWrapper) UpdateContact(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "contact_id" -------------
+	var contactId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contact_id", c.Param("contact_id"), &contactId, runtime.BindStyledParameterOptions{Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter contact_id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.UpdateContact(c, contactId)
+}
+
 // GetContact operation middleware
 func (siw *ServerInterfaceWrapper) GetContact(c *gin.Context) {
 
@@ -314,6 +358,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/api/v1/auth/register", wrapper.RegisterUser)
 	router.POST(options.BaseURL+"/api/v1/contact", wrapper.AddContact)
 	router.DELETE(options.BaseURL+"/api/v1/contact/:contact_id", wrapper.DeleteContact)
+	router.PATCH(options.BaseURL+"/api/v1/contact/:contact_id", wrapper.UpdateContact)
 	router.POST(options.BaseURL+"/api/v1/contact/:contact_id", wrapper.GetContact)
 	router.POST(options.BaseURL+"/api/v1/contacts", wrapper.GetContacts)
 }
@@ -321,25 +366,26 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYTXPbNhD9Kxy0R9aSm/RQ3uR+jXtoPE4zPXg8HYhYWUhIgFks5age/vcOAH5/iJ7U",
-	"UpypbxQJLB4e3ttd4YHFOs20AkWGRQ/MxFtIuXtcCfGTVsRjuoaPORiyLzPUGSBJcEPWEmkr+N4+bzSm",
-	"nFjEBCdgIaN9BixihlCqO1aETCpJkidXW638bEmQuodvETYsYt8sGiyLEshiJYSb8Wb9HmKyccrAHJHv",
-	"7W/FU7BRBgsqTWMfipAhfMwlgmDRjZ8eNlvpA72tV9Q1hDY1JtPKwJCb2A+Y218Zp9peD1wVZAJEm5kB",
-	"AGmuUKYc9y0O1lonwJWdntm58/T4YaPr57SdWhs+ZRL9Y0cX35FMR8VB+gOoeTR+WFjHn8I1qdhE30k1",
-	"qpaMG3OvUXQw1y/DGWA+bivKNLIpwfCctrNuaDjvI3DTx1btKuw/eli0uJOK4A7wczxYyu/xaeBgDugx",
-	"Ie1x9W09xszPkADBiJMHI39B1DgpdvtxdJOGIJsXtRsVlmHGcP4GNJeJM4REczFLox/WEHkvaftH94zq",
-	"HFHMQPlima8BYSYJMZBATP5cDqF4W46bgFGHmcUxw8bjpd7jZUbsdfgxgIfrw4SXn6ZuOBNOF4+uEIeW",
-	"UnydgJhA4OG9Ucl+QrZtIFWoMRTXcCcNAT7PctGgO3XJ6JliSItMpXudSiXTPGXReTiiJL3ZGOiOWw7H",
-	"9alxsYeobDqFOEdJ+7d2ax7JBXAEXJU8rN2vX6vj+P2vP1noW1qnEPe1OZstUcaKwrWmG23nCzAxyoyk",
-	"ViyqCueF1h+C1dWlnSgpge4X/2EHaPyk87Pl2dJtPgPFM8ki9upsefbKHTZtHegFz+Rid76oji/TXnuW",
-	"Ym4XvxQsct3CO+MAo9fnhRb7KqWAclN4liUydpMW741WTQ//GF1Uui+6h0CYg3vhdecwf79cPvHSpajd",
-	"2l3i7XdQVAYPTB7HYMwmTyyvr58QSLusj+C4VDueSBFgRZNd/fzUq7tcEWgM6mRRhOyHU7JAgIongQHc",
-	"AQa+T3F+zFNfJ5jVacA7x+ZGtJW+wDKfTUu+ynhHlH0/5Z9Y+oOcPkK4H4PPUfw/nmp1L6gEgYt9AJ+k",
-	"IfMMZV+dZqDgPshNWc0q0bf64IkMX18jHCvHD65wTp3phxclI1SXQwIuBIiW4pP9/yrhv1M2TWqU/8Az",
-	"yvFlz8Wim263dXNb3La9sBIi4M4Ile5HvLB4KB/+lqLwHZf9Cz60RuevueudkKdAgMYBsU2566eqf/oR",
-	"awKzvsLDFkmD7vP2iPIfv2A44ABPx4sHag+8Xr4+1dLVGShNwUbn6iv0oNdbwBsLhhOlp7m6OL65nr6u",
-	"DS/ETlzXRq7BDigKgVDC7sXXL77+PF9flwJqO3tYXM10p9m6qWTHtqT54p40jzCleXHl195xtlyRSEOB",
-	"3gS1E4qiKP4NAAD//+kIGRXcHgAA",
+	"H4sIAAAAAAAC/+xZTW/jNhD9KwLboxo73e2hujn9QnroBtkGPQRBQYvjmLsSqR1SzrqB/ntBUt+irCC1",
+	"nQT1TZbI4dPjezND+ZHEMs2kAKEViR6JiteQUnu5YOwnKTSN9TV8yUFpczNDmQFqDnbIkqNeM7o11yuJ",
+	"KdUkIoxqICHR2wxIRJRGLu5JERIuuOY0uVpL4WZzDam9+BZhRSLyzazBMiuBzBaM2Rkflp8g1iZOGZgi",
+	"0q35LWgKJspgQSG170EREoQvOUdgJLp108PmVfpA7+oVZQ2hTY3KpFAw5CZ2A6ber4xTvV4PXBVkBESb",
+	"mQEArq6QpxS3LQ6WUiZAhZmembnT9Lhh3vVzvR5bG75mHN1lRxffaZ56xaHlZxDTaNywsI4/hmtUsYm8",
+	"58Krlowq9SCRdTDXN8MJYC5uK8o4sjHB0FyvJ93QcN5HYKf7Vu0q7D96mLW440LDPeBzPFjK7+lpYGcO",
+	"6DHBzXb1be1j5mdIQIPHyYORvyBKHBW7eeh9SaUhmxa1HRWWYXw4fwM9lYkzhERSNkmjG9YQ+cD1+o/u",
+	"HtU5opiA8mKZrwGhRglRkECs3b7sQvGxHDcCow4ziWOCjadLvcfLhNjr8D6Au+vDiJf3UzesCceLR1eI",
+	"Q0sJukyAjSBw8D6IZDsi2zaQKpQPxTXcc6UBX2e5aNAdu2T0TDGkhafc3k654Gmekug89ChJrlYKuuPm",
+	"w3F9amxsH6qbzJSlvfakz+gdp2C9UFY01QbiHLnefjSh3KIXQBFwUcpkaX/9WpHy+19/ktB1/NZA9mnD",
+	"0lrrjBSF7dxX0sxnoGLkmeZSkKjqKy6k/Bwsri7NRK4T6D5xDzaAyk06P5ufza02MhA04yQi787mZ++s",
+	"F/Tagp7RjM8257NK3Zl0+2zYpGbxS0Yi20zdKAsYnRYuJNtWTIOwU2iWJTy2k2aflBTNEecptqk0VnS3",
+	"QWMO9obbaov5+/l8z0uXOrJrd4k3z0HoMnig8jgGpVZ5Ynh9v0cg7a7Hg+NSbGjCWYAVTWb182OvblNp",
+	"IDGoc2kRkh+OyYIGFDQJFOAGMHBtnPVjnroySoxOA9rZNjuirfQZlul+XPJVQTig7PsV8cjSH5Q8D+Fu",
+	"DL5G8f94rNWdoBIEyrYBfOVKq1co+2o3AwEPQa7KYl+JvlUQRzJ8/ZXlUDl+8IXr2Jl++B3JQ3U5JKCM",
+	"AWspPtn+rxL+jTBpUiL/B15Rji97LhLddrut27viru2FBWMBtUaodO/xwuyxvPibs8J1XAm4RrRrjc6X",
+	"C9s7IU1BAyoLxJxZbD9VfQiJSBOY9BUetkgaNOd3B5S///vLDgc4Ok4eqD3wfv7+WEtXeyCkDlYyF2/Q",
+	"g05vAW0saE8d8XposM6h7vAG239t8x6Wj1ze/CfjHdrK7YSTv0/+fpa/nd56/va2ls2X27fo7eH/AUc2",
+	"tudfgB2KQtDIYXPy9cnXz/P1dSmgtrOHzbMaP0m2/qghh7akenFPqieYUp1c+dZPlC1XJFzpQK6C2glF",
+	"URT/BgAA//8SWYwS2yMAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

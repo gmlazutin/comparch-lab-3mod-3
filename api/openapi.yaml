@@ -202,6 +202,25 @@ components:
       required:
         - contact
 
+    UpdateContactRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        birthday:
+          type: string
+          format: date
+        note:
+          type: string
+        
+    UpdateContactResponse:
+      type: object
+      properties:
+        contact:
+          $ref: '#/components/schemas/ContactObject'
+      required:
+        - contact
+
     DeleteContactResponse:
       type: object
 
@@ -377,6 +396,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetContactResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '404':
+          description: Contact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObject'
+
+    patch:
+      summary: Update a contact
+      operationId: updateContact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: contact_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactRequest'
+      responses:
+        '200':
+          description: Contact updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateContactResponse'
         '400':
           description: Invalid request
           content:

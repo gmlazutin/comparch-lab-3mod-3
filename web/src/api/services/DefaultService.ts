@@ -13,6 +13,8 @@ import type { GetContactsRequest } from '../models/GetContactsRequest';
 import type { GetContactsResponse } from '../models/GetContactsResponse';
 import type { RegisterRequest } from '../models/RegisterRequest';
 import type { RegisterResponse } from '../models/RegisterResponse';
+import type { UpdateContactRequest } from '../models/UpdateContactRequest';
+import type { UpdateContactResponse } from '../models/UpdateContactResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -114,6 +116,33 @@ export class DefaultService {
     ): CancelablePromise<GetContactResponse> {
         return __request(OpenAPI, {
             method: 'POST',
+            url: '/api/v1/contact/{contact_id}',
+            path: {
+                'contact_id': contactId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid request`,
+                401: `Unauthorized`,
+                404: `Contact not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
+     * Update a contact
+     * @param contactId
+     * @param requestBody
+     * @returns UpdateContactResponse Contact updated successfully
+     * @throws ApiError
+     */
+    public static updateContact(
+        contactId: number,
+        requestBody: UpdateContactRequest,
+    ): CancelablePromise<UpdateContactResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
             url: '/api/v1/contact/{contact_id}',
             path: {
                 'contact_id': contactId,
