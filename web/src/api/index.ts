@@ -20,6 +20,7 @@ export type { GetContactRequest } from './models/GetContactRequest';
 export type { GetContactResponse } from './models/GetContactResponse';
 export type { GetContactsRequest } from './models/GetContactsRequest';
 export type { GetContactsResponse } from './models/GetContactsResponse';
+export type { NonEmptyString } from './models/NonEmptyString';
 export type { PhoneObject } from './models/PhoneObject';
 export type { PreloadObject } from './models/PreloadObject';
 export type { RegisterRequest } from './models/RegisterRequest';

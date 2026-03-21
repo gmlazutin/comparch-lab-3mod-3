@@ -3,10 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddPhoneObject } from './AddPhoneObject';
+import type { NonEmptyString } from './NonEmptyString';
 export type AddContactRequest = {
-    name: string;
+    name: NonEmptyString;
     birthday: string;
-    note?: string;
+    note?: NonEmptyString;
     initialPhones: Array<AddPhoneObject>;
 };
 

@@ -28,8 +28,12 @@ const (
 type AddContactRequest struct {
 	Birthday      openapi_types.Date `json:"birthday"`
 	InitialPhones []AddPhoneObject   `json:"initialPhones"`
-	Name          string             `json:"name"`
-	Note          *string            `json:"note,omitempty"`
+
+	// Name This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+	Name NonEmptyString `json:"name"`
+
+	// Note This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+	Note *NonEmptyString `json:"note,omitempty"`
 }
 
 // AddContactResponse defines model for AddContactResponse.
@@ -39,8 +43,10 @@ type AddContactResponse struct {
 
 // AddPhoneObject defines model for AddPhoneObject.
 type AddPhoneObject struct {
-	IsPrimary *bool  `json:"isPrimary,omitempty"`
-	Phone     string `json:"phone"`
+	IsPrimary *bool `json:"isPrimary,omitempty"`
+
+	// Phone This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+	Phone NonEmptyString `json:"phone"`
 }
 
 // AuthObject defines model for AuthObject.
@@ -51,8 +57,9 @@ type AuthObject struct {
 
 // AuthRequest defines model for AuthRequest.
 type AuthRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	// Login This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+	Login    NonEmptyString `json:"login"`
+	Password string         `json:"password"`
 }
 
 // AuthResponse defines model for AuthResponse.
@@ -99,6 +106,9 @@ type GetContactsResponse struct {
 	Contacts []ContactObject `json:"contacts"`
 }
 
+// NonEmptyString This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+type NonEmptyString = string
+
 // PhoneObject defines model for PhoneObject.
 type PhoneObject struct {
 	Id        int    `json:"id"`
@@ -114,8 +124,9 @@ type PreloadObject struct {
 
 // RegisterRequest defines model for RegisterRequest.
 type RegisterRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	// Login This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
+	Login    NonEmptyString `json:"login"`
+	Password string         `json:"password"`
 }
 
 // RegisterResponse defines model for RegisterResponse.
@@ -321,25 +332,28 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYTXPbNhD9Kxy0R9aSm/RQ3uR+jXtoPE4zPXg8HYhYWUhIgFks5age/vcOAH5/iJ7U",
-	"UpypbxQJLB4e3ttd4YHFOs20AkWGRQ/MxFtIuXtcCfGTVsRjuoaPORiyLzPUGSBJcEPWEmkr+N4+bzSm",
-	"nFjEBCdgIaN9BixihlCqO1aETCpJkidXW638bEmQuodvETYsYt8sGiyLEshiJYSb8Wb9HmKyccrAHJHv",
-	"7W/FU7BRBgsqTWMfipAhfMwlgmDRjZ8eNlvpA72tV9Q1hDY1JtPKwJCb2A+Y218Zp9peD1wVZAJEm5kB",
-	"AGmuUKYc9y0O1lonwJWdntm58/T4YaPr57SdWhs+ZRL9Y0cX35FMR8VB+gOoeTR+WFjHn8I1qdhE30k1",
-	"qpaMG3OvUXQw1y/DGWA+bivKNLIpwfCctrNuaDjvI3DTx1btKuw/eli0uJOK4A7wczxYyu/xaeBgDugx",
-	"Ie1x9W09xszPkADBiJMHI39B1DgpdvtxdJOGIJsXtRsVlmHGcP4GNJeJM4REczFLox/WEHkvaftH94zq",
-	"HFHMQPlima8BYSYJMZBATP5cDqF4W46bgFGHmcUxw8bjpd7jZUbsdfgxgIfrw4SXn6ZuOBNOF4+uEIeW",
-	"UnydgJhA4OG9Ucl+QrZtIFWoMRTXcCcNAT7PctGgO3XJ6JliSItMpXudSiXTPGXReTiiJL3ZGOiOWw7H",
-	"9alxsYeobDqFOEdJ+7d2ax7JBXAEXJU8rN2vX6vj+P2vP1noW1qnEPe1OZstUcaKwrWmG23nCzAxyoyk",
-	"ViyqCueF1h+C1dWlnSgpge4X/2EHaPyk87Pl2dJtPgPFM8ki9upsefbKHTZtHegFz+Rid76oji/TXnuW",
-	"Ym4XvxQsct3CO+MAo9fnhRb7KqWAclN4liUydpMW741WTQ//GF1Uui+6h0CYg3vhdecwf79cPvHSpajd",
-	"2l3i7XdQVAYPTB7HYMwmTyyvr58QSLusj+C4VDueSBFgRZNd/fzUq7tcEWgM6mRRhOyHU7JAgIongQHc",
-	"AQa+T3F+zFNfJ5jVacA7x+ZGtJW+wDKfTUu+ynhHlH0/5Z9Y+oOcPkK4H4PPUfw/nmp1L6gEgYt9AJ+k",
-	"IfMMZV+dZqDgPshNWc0q0bf64IkMX18jHCvHD65wTp3phxclI1SXQwIuBIiW4pP9/yrhv1M2TWqU/8Az",
-	"yvFlz8Wim263dXNb3La9sBIi4M4Ile5HvLB4KB/+lqLwHZf9Cz60RuevueudkKdAgMYBsU2566eqf/oR",
-	"awKzvsLDFkmD7vP2iPIfv2A44ABPx4sHag+8Xr4+1dLVGShNwUbn6iv0oNdbwBsLhhOlp7m6OL65nr6u",
-	"DS/ETlzXRq7BDigKgVDC7sXXL77+PF9flwJqO3tYXM10p9m6qWTHtqT54p40jzCleXHl195xtlyRSEOB",
-	"3gS1E4qiKP4NAAD//+kIGRXcHgAA",
+	"H4sIAAAAAAAC/+xYTXPbNhD9Kxg0pw4ryU16KG9Om3bcaROPP6YHx+lAxMpETAIIsLSjuvzvHQAkRYqk",
+	"ZDe2Yk99EkUAi4fFe29B3NBE5VpJkGhpfENtkkLO/OM+5z8piSzBI/hUgEX3UhulwaAA32UuDKacLd3z",
+	"QpmcIY0pZwg0orjUQGNq0Qh5QcuICilQsOwwVTKMFgi5f3hhYEFj+s10hWVaAZnuc+5HvJt/hARdnCow",
+	"M4Yt3X/JctgW5a2Sb3KNy+MGjVR451FlRA18KoQBTuOzMHG0SsL6Es8brKoB306q1Upa6Gc1CR22oavi",
+	"1IlZA1cHGQHRzmkPgLCHRuTM+H2tRs+VyoBJN1y7sV+YuxBjEFyB6Rgw+KyFCY8dun2HIh/kHKpLkK1V",
+	"2GE0oVvUxB/DNSqETF0IeXcSambttTK8s6DmZURzIX8HeYEpjfeiLWsIEFoxxxcxRjxWuJm26HG1PesI",
+	"/PChWbtM/UIX4a3tFBLhAkzbBXoDaqH3GvTdjGijC61lQrjNW7eHocz8DBkgDDhCr+cbY5QZ1YVrHFyk",
+	"RdDb+e97RVWYIZy/Am6rBdpAphjfmsbQbZXIa4Hp2+4eNV5TboHy1Rx0BcKOJsRCBgmGfdmE4rjqNwKj",
+	"CbMVx5Zs3J7qa3nZQvYm/BDANc+LbygHmxihUShJY3qSCkuEJYzwIs+XJEkhuSSoCEhbGCCYMiSBtYQr",
+	"sEQqJImSVli0RC2I1SwBO7XIjHthCEhuiSMVwRTyCTn0uSBXLBOcuVnJH6fHJ2QOxK3cyY+T+dJ1Jkkm",
+	"QOKkZ7yaIYJxcD+cfXj/3p5Pvg2/L/6pXrwYsqrNNXbEx25bezcL2hvQeI3tirBvJ5LNM+AjCAK8dzJb",
+	"jki2DaQONYTiCC6ERTBPvqquFrLryrrmHf0Milz417mQIi/y9opbpFOLhYVuv1m/33pqfOw+Kld1ICmM",
+	"wOWxW1pA8hqYAbNf5WHu//1Sb85vf57QKHx7eDL51pWkUkRNy9J/QyxU30Qqv3qt1CXZPzxwAwVm0G0J",
+	"DVdgbBi0N5lNZn7xGiTTgsb05WQ2eek3G1MPesq0mF7tTevt0yrQ1KXYe8kBp7E/VJ1aD9gEKr9WfFk7",
+	"L0g/hGmdicQPmn60Sq4+tm7Di1oiZXcT0BTgXwTeeczfz2b3PHVFaj93N/GuHSRWwYktkgSsXRSZy+ur",
+	"ewTSPv0M4DiQ3t6JqdPkZt/b9ezeK1wJasyijOgPu8yCq1IsIxbMFRgSjnNej0UeSgp1PCWss22+R5vp",
+	"U1P52Tjla8d7QNqvV4cdU7/n6QMJD33MYyT/j7uaPRAqM8D4ksBndyx7hLSvd5NIuCaFrapZTfrW58KI",
+	"wze3Ng/l8b27tl07ff9eaiDVVRfCOAfeYny2/F8Z/ql0NqmM+BsekcdXZy4an3VPW2fn5XlbC/ucE+aF",
+	"UPN+QAvTm+rhL8HLcOJyn0p9aXRuMPzZybAcEIz1QNz53Z+n6guRmK4C03WGR60k9U6f5w9I/+F7mA0K",
+	"COl41kCjgVezV7uaut4DqZAsVCGfoAYD3whbSTAaKT2rG56HF9f917X+veGO69rAbeEGRhlAI+DqWdfP",
+	"uv5vuj6qCNRWdr+42vGTZutClz60JO1X16S9hSjtsyqf+omzpYpMWCRqQRollGVZ/hsAAP//d9T2r4Ug",
+	"AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -2,8 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { NonEmptyString } from './NonEmptyString';
 export type AuthRequest = {
-    login: string;
+    login: NonEmptyString;
     password: string;
 };
 
