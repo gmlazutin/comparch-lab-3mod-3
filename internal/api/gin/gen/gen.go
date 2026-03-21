@@ -31,9 +31,7 @@ type AddContactRequest struct {
 
 	// Name This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
 	Name NonEmptyString `json:"name"`
-
-	// Note This is a dummy check to ensure that string does not consists of spaces/starts or ends with them. Proper validation MUST be completed by the client.
-	Note *NonEmptyString `json:"note,omitempty"`
+	Note *string        `json:"note,omitempty"`
 }
 
 // AddContactResponse defines model for AddContactResponse.
@@ -332,27 +330,27 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 	"AAA=",
 }
 

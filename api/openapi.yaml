@@ -176,7 +176,7 @@ components:
           type: string
           format: date
         note:
-          $ref: '#/components/schemas/NonEmptyString'
+          type: string
         initialPhones:
           type: array
           items:
